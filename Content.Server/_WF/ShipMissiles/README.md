@@ -13,8 +13,15 @@ The missile keeps the upstream `TargetSeekingComponent`, configured as a seeker 
 everything that moves. `ShipMissiles` missiles are the ASM-50 (Vespera), ASM-150 (Vanyk/Vanquisher) and ASM-250
 (Paladin/Tovek) families; capital torpedoes and guided shells keep the old pursuit law.
 
+Release is soft: the missile is handed a bearing — the console's aim point if one was passed, else the hull it has
+locked — clamped to `launchOffBoresight`, and the ASM-50 snaps its whole velocity onto it while the rest swing. For
+`launchTransient` seconds it then steers on multiplied authority with a damped command, spends no divert impulse, and
+may lock inside the much wider `launchAcquireCone`, which upstream's scan arc is far too narrow for. That is what
+stops the gunner having to lead: point the hull roughly at the target and the missile finds the rest.
+
 Entry points: `WFMissileFlightSystem` (motor, diverters, terminal phase, dud), `WFMissileFlightSystem.Seeker`
-(aim point, notch and memory), `WFMissileFlightComponent`, and `MissileGuidance` in `Content.Shared`.
+(aim point, notch and memory), `WFMissileFlightSystem.Launch` (release bearing and the wider launch lock),
+`WFMissileFlightComponent`, and `MissileGuidance` in `Content.Shared`.
 
 Tuning lives entirely in the prototype's `WFMissileFlight` component. A ship's own manoeuvre authority is roughly
 `v · ω`, so with hulls capped at 30 m/s and 4 rad/s a light hull pulls ~45 m/s² and a heavy one ~12 m/s²; keep
@@ -32,6 +39,7 @@ Design notes: `Docs/_WF/ShipMissiles/design.md`.
 
 - [`Content.Server/_WF/ShipMissiles/WFMissileFlightComponent.cs`](WFMissileFlightComponent.cs)
 - [`Content.Server/_WF/ShipMissiles/WFMissileFlightSystem.cs`](WFMissileFlightSystem.cs)
+- [`Content.Server/_WF/ShipMissiles/WFMissileFlightSystem.Launch.cs`](WFMissileFlightSystem.Launch.cs)
 - [`Content.Server/_WF/ShipMissiles/WFMissileFlightSystem.Seeker.cs`](WFMissileFlightSystem.Seeker.cs)
 
 ### Shared
@@ -52,6 +60,7 @@ Design notes: `Docs/_WF/ShipMissiles/design.md`.
 
 ## Non-modular edits
 
+- [`Content.Server/_Mono/FireControl/FireControlSystem.TargetGuided.cs`](../../_Mono/FireControl/FireControlSystem.TargetGuided.cs): tell a soft-launched missile where the console aimed, before its seeker locks
 - [`Resources/Prototypes/_Mono/Entities/SpaceArtillery/SpaceArtillery/Missile/projectiles.yml`](../../../Resources/Prototypes/_Mono/Entities/SpaceArtillery/SpaceArtillery/Missile/projectiles.yml)
   - the carrier only seeks; WFMissileFlightSystem flies the missile
   - motor only, no seeker and no diverters

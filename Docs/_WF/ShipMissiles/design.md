@@ -42,6 +42,24 @@ That leaves no edit to `_Mono` C#, and flares, alerts and radar keep working for
 acquisition is upstream's: instant, nearest blip in the cone, no seeker acquisition timer. `trackDelay` already
 covers the launch window, so nothing is lost for gameplay.
 
+## Release
+
+A missile is soft-launched rather than dropped down whatever line the gun happened to point at. At release it takes a
+bearing — the console's aim point if `FireControlSystem` passed one, else the hull it has just locked — clamped to
+`launchOffBoresight` so it is never handed a turn it cannot fly, and blended from the nose by `snapFraction`: the
+ASM-50 snaps its whole velocity over, everything else swings. Re-pointing also removes the crab left by inheriting the
+launcher's velocity.
+
+For `launchTransient` seconds afterwards the missile stabilises for free: `launchTurnMultiplier` extra authority, a
+command damped from `launchDamping` up to full, and no divert impulse spent. Upstream's `scanArc` is 7.5 to 17.5
+degrees of half-cone, far too narrow to hand a missile a target at release, so the transient also gets its own wider
+`launchAcquireCone` and range. Once it ends, upstream's rules — and the flare decoys that read `scanArc` — are
+untouched, which is why the soft launch cannot be used to make flares stronger.
+
+The one `_Mono` C# edit in the module is the three lines that store the console's aim point on a fired missile, inside
+the existing `AmmoShotEvent` handler. It has to live there: a second subscription to `GunComponent, AmmoShotEvent`
+would crash the server at startup.
+
 ## Notch and memory
 
 The notch is not a special case bolted on: for a target crossing square to the line of sight the closure rate is

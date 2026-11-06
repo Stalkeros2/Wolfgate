@@ -1,5 +1,6 @@
 using System.Numerics;
 using Content.Server._Mono.Projectiles.TargetSeeking;
+using Content.Server._WF.BoardingAction;
 using Content.Shared._WF.ShipMissiles;
 using Content.Shared.Projectiles;
 using Robust.Server.GameObjects;
@@ -23,6 +24,7 @@ public sealed partial class WFMissileFlightSystem : EntitySystem
     [Dependency] private SharedTransformSystem _transform = default!;
     [Dependency] private PhysicsSystem _physics = default!;
     [Dependency] private TargetSeekingSystem _targetSeeking = default!;
+    [Dependency] private WFHackHarpoonSystem _wfHack = default!;
 
     private EntityQuery<ProjectileComponent> _projectiles;
     private EntityQuery<PhysicsComponent> _bodies;
@@ -71,12 +73,29 @@ public sealed partial class WFMissileFlightSystem : EntitySystem
         if (!flight.Launched)
         {
             flight.Launched = true;
-            velocity += heading.ToWorldVec() * flight.LaunchSpeed;
+            flight.LaunchTimer = flight.LaunchTransient;
+
+            // Upstream's scan arc is too narrow for a handoff, so the missile looks wider while it stabilises. This
+            // runs before the bearing is taken: a snapped shot must leave the rail already pointed at its lock.
+            if (carrier is { CurrentTarget: null })
+                AcquireAtLaunch(uid, xform, flight, carrier, ownPos);
+
+            var nose = heading.ToWorldVec();
+            var bearing = LaunchBearing(xform, flight, carrier, ownPos, nose);
+            velocity += bearing * flight.LaunchSpeed;
+
+            // A full snap takes the whole vector over, so the launcher's own drift doesn't have to be flown out first.
+            if (flight.SnapFraction >= 1f && velocity.LengthSquared() > 0f)
+                velocity = bearing * velocity.Length();
+
             ownVel = velocity;
         }
 
         var boosting = flight.BoostRemaining > 0f;
         var speed = velocity.Length();
+        var transient = flight.LaunchTimer > 0f;
+        if (transient)
+            flight.LaunchTimer = MathF.Max(0f, flight.LaunchTimer - frameTime);
 
         if (carrier is { SeekingDisabled: false } && carrier.TrackDelay <= 0f &&
             TryGetAim(uid, xform, flight, carrier, ownPos, ownVel, frameTime, out var aimPos, out var aimVel))
@@ -87,12 +106,19 @@ public sealed partial class WFMissileFlightSystem : EntitySystem
             var terminal = MissileGuidance.TimeToGo(relPos, relVel)
                            < MathF.Max(flight.TerminalFraction * flight.LaunchTof, flight.MinTerminal);
             var budget = flight.Divert0 > 0f ? Math.Clamp(flight.Divert / flight.Divert0, 0f, 1f) : 0f;
-            var authority = flight.LateralAccel * (0.4f + 0.6f * budget);
 
-            // Dry diverters leave nothing to steer with; the motor still flies the airframe on.
-            var command = flight.Divert > 0f
+            // Off the rail the missile gets extra authority and a damped command while it stabilises.
+            var ramp = flight.LaunchTransient > 0f
+                ? 1f - Math.Clamp(flight.LaunchTimer / flight.LaunchTransient, 0f, 1f)
+                : 1f;
+            var turn = flight.LaunchTurnMultiplier + (1f - flight.LaunchTurnMultiplier) * ramp;
+            var authority = flight.LateralAccel * (0.4f + 0.6f * budget) * turn;
+            var damping = flight.LaunchDamping + (1f - flight.LaunchDamping) * ramp;
+
+            // Dry diverters leave nothing to steer with; the motor still flies the airframe on. The transient is free.
+            var command = flight.Divert > 0f || transient
                 ? MissileGuidance.ProportionalNavigation(
-                    MissileGuidance.LosRate(relPos, relVel), closing, flight.NavigationConstant, authority)
+                    MissileGuidance.LosRate(relPos, relVel), closing, flight.NavigationConstant, authority) * damping
                 : 0f;
 
             velocity += MissileGuidance.LosNormal(relPos) * command * frameTime;
@@ -104,19 +130,23 @@ public sealed partial class WFMissileFlightSystem : EntitySystem
                     velocity *= speed / turned;
             }
 
-            flight.Divert = MathF.Max(0f, flight.Divert
-                - MathF.Min(MathF.Abs(command), flight.DivertCap) * frameTime * (terminal ? 1f : flight.MidcourseDrain));
-
-            if (flight.Divert0 > 0f && flight.Divert <= 0f)
+            // The launch transient costs no divert impulse: off-rail stabilisation is free.
+            if (!transient)
             {
-                if (closing > 0f)
-                    flight.DudTimer = 0f;
-                else if ((flight.DudTimer += frameTime) > flight.DudOpeningTime)
+                flight.Divert = MathF.Max(0f, flight.Divert
+                    - MathF.Min(MathF.Abs(command), flight.DivertCap) * frameTime * (terminal ? 1f : flight.MidcourseDrain));
+
+                if (flight.Divert0 > 0f && flight.Divert <= 0f)
                 {
-                    // Out of diverters and opening: a clean miss rather than a stray hit on someone else's hull.
-                    // A missile that never had diverters is an unguided rocket and flies on.
-                    QueueDel(uid);
-                    return;
+                    if (closing > 0f)
+                        flight.DudTimer = 0f;
+                    else if ((flight.DudTimer += frameTime) > flight.DudOpeningTime)
+                    {
+                        // Out of diverters and opening: a clean miss rather than a stray hit on someone else's hull.
+                        // A missile that never had diverters is an unguided rocket and flies on.
+                        QueueDel(uid);
+                        return;
+                    }
                 }
             }
         }

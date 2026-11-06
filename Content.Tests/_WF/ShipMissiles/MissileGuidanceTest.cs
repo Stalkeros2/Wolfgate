@@ -96,4 +96,54 @@ public sealed class MissileGuidanceTest
             Assert.That(MissileGuidance.TimeToGo(relPos, new Vector2(100f, 0f)), Is.EqualTo(100f).Within(1e-3f));
         });
     }
+
+    /// <summary>A launch cone is checked with vectors, so no angle convention can get in the way.</summary>
+    [Test]
+    public void TestsTheLaunchCone()
+    {
+        var nose = new Vector2(1f, 0f);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(MissileGuidance.WithinCone(new Vector2(100f, 0f), nose, 45f), Is.True, "Dead ahead.");
+            Assert.That(MissileGuidance.WithinCone(new Vector2(100f, 100f), nose, 60f), Is.True, "45 off, inside 60.");
+            Assert.That(MissileGuidance.WithinCone(new Vector2(100f, 100f), nose, 30f), Is.False, "45 off, outside 30.");
+            Assert.That(MissileGuidance.WithinCone(Vector2.Zero, nose, 45f), Is.False, "No bearing, no target.");
+        });
+    }
+
+    /// <summary>A handoff is clamped to what the missile can take off the rail, in whichever direction it is off.</summary>
+    [Test]
+    public void ClampsAHandoffToTheRail()
+    {
+        var nose = new Vector2(1f, 0f);
+
+        var inside = MissileGuidance.ClampBearing(nose, new Vector2(1f, 0.2f), 90f);
+        Assert.That(Vector2.Dot(nose, inside), Is.GreaterThan(0.99f), "A bearing inside the limit is kept.");
+
+        var clamped = MissileGuidance.ClampBearing(nose, new Vector2(-1f, 0f), 45f);
+        // 45 degrees off the nose is a dot of cos(45) = 0.707, no further.
+        Assert.That(Vector2.Dot(nose, clamped), Is.EqualTo(0.7071068f).Within(1e-4f));
+
+        var mirror = MissileGuidance.ClampBearing(nose, new Vector2(-1f, -1f), 45f);
+        Assert.That(Vector2.Dot(nose, mirror), Is.EqualTo(0.7071068f).Within(1e-4f), "Clamped either way round.");
+        Assert.That(mirror.Y, Is.LessThan(0f), "And on the side it was aimed at.");
+    }
+
+    /// <summary>Zero leaves the nose alone, one hands the whole bearing over, and a half-turn still resolves.</summary>
+    [Test]
+    public void BlendsTheReleaseBearing()
+    {
+        var nose = new Vector2(1f, 0f);
+        var goal = new Vector2(0f, 1f);
+
+        var none = MissileGuidance.BlendDirection(nose, goal, 0f);
+        Assert.That(Vector2.Dot(nose, none), Is.EqualTo(1f).Within(1e-5f), "Nothing moves at zero.");
+
+        var all = MissileGuidance.BlendDirection(nose, goal, 1f);
+        Assert.That(Vector2.Dot(goal, all), Is.EqualTo(1f).Within(1e-5f), "The goal is taken in full at one.");
+
+        var half = MissileGuidance.BlendDirection(nose, -nose, 0.5f);
+        Assert.That(half.Length(), Is.EqualTo(1f).Within(1e-4f), "A half turn still gives a unit vector.");
+    }
 }

@@ -1,4 +1,5 @@
 using System.Numerics;
+using Robust.Shared.Map;
 
 namespace Content.Server._WF.ShipMissiles;
 
@@ -70,6 +71,34 @@ public sealed partial class WFMissileFlightComponent : Component
     [DataField]
     public float DudOpeningTime = 0.4f;
 
+    /// <summary>Seconds after release the missile steers on free divert authority while it stabilises.</summary>
+    [DataField]
+    public float LaunchTransient = 0.35f;
+
+    /// <summary>Turn authority multiplier at the start of the launch transient, easing to one by its end.</summary>
+    [DataField]
+    public float LaunchTurnMultiplier = 2.5f;
+
+    /// <summary>Share of the proportional-navigation command applied at release, easing to one by its end.</summary>
+    [DataField]
+    public float LaunchDamping = 0.15f;
+
+    /// <summary>Half-angle, in degrees, the seeker may lock within during the launch transient.</summary>
+    [DataField]
+    public float LaunchAcquireCone = 45f;
+
+    /// <summary>Range, in metres, the seeker may lock within during the launch transient.</summary>
+    [DataField]
+    public float LaunchAcquireRange = 1600f;
+
+    /// <summary>Half-angle, in degrees, off the nose the missile may be handed at release.</summary>
+    [DataField]
+    public float LaunchOffBoresight = 90f;
+
+    /// <summary>How far the release impulse is turned onto its bearing, one snapping the whole velocity over.</summary>
+    [DataField]
+    public float SnapFraction;
+
     /// <summary>Whether the launch impulse has been applied.</summary>
     public bool Launched;
 
@@ -90,6 +119,12 @@ public sealed partial class WFMissileFlightComponent : Component
 
     /// <summary>Seconds flown opening with the diverters dry.</summary>
     public float DudTimer;
+
+    /// <summary>Seconds of launch transient left.</summary>
+    public float LaunchTimer;
+
+    /// <summary>Where the launcher was told to send the missile, before the seeker has locked anything.</summary>
+    public MapCoordinates? Designated;
 
     /// <summary>Time to go at lock, in seconds.</summary>
     public float LaunchTof;

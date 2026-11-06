@@ -60,4 +60,50 @@ public static class MissileGuidance
     {
         return relPos.Length() / MathF.Max(ClosingRate(relPos, relVel), minimumClosing);
     }
+
+    /// <summary>True when <paramref name="relPos"/> sits inside a cone of half-width <paramref name="halfConeDegrees"/> about <paramref name="heading"/>.</summary>
+    public static bool WithinCone(Vector2 relPos, Vector2 heading, float halfConeDegrees)
+    {
+        var distance = relPos.Length();
+        var headingLength = heading.Length();
+        if (distance <= 0f || headingLength <= 0f)
+            return false;
+
+        var cos = Vector2.Dot(heading, relPos) / (distance * headingLength);
+        return cos >= MathF.Cos(halfConeDegrees * (MathF.PI / 180f));
+    }
+
+    /// <summary>
+    /// The bearing <paramref name="goal"/> turned back to within <paramref name="halfAngleDegrees"/> of
+    /// <paramref name="reference"/>, so a missile is never handed a bearing it cannot physically take.
+    /// </summary>
+    public static Vector2 ClampBearing(Vector2 reference, Vector2 goal, float halfAngleDegrees)
+    {
+        if (reference.LengthSquared() <= 0f || goal.LengthSquared() <= 0f)
+            return reference;
+
+        var referenceAngle = MathF.Atan2(reference.Y, reference.X);
+        var goalAngle = MathF.Atan2(goal.Y, goal.X);
+        var difference = MathF.IEEERemainder(goalAngle - referenceAngle, MathF.PI * 2f);
+        var limit = halfAngleDegrees * (MathF.PI / 180f);
+
+        if (MathF.Abs(difference) <= limit)
+            return Vector2.Normalize(goal);
+
+        var clamped = referenceAngle + MathF.Sign(difference) * limit;
+        return new Vector2(MathF.Cos(clamped), MathF.Sin(clamped));
+    }
+
+    /// <summary>
+    /// <paramref name="direction"/> turned toward <paramref name="goal"/> by <paramref name="fraction"/>, one being all
+    /// the way. A half-turn lerp collapses to nothing, so that falls back to the goal.
+    /// </summary>
+    public static Vector2 BlendDirection(Vector2 direction, Vector2 goal, float fraction)
+    {
+        var from = direction.LengthSquared() > 0f ? Vector2.Normalize(direction) : goal;
+        var to = goal.LengthSquared() > 0f ? Vector2.Normalize(goal) : from;
+
+        var blended = Vector2.Lerp(from, to, Math.Clamp(fraction, 0f, 1f));
+        return blended.LengthSquared() > 1e-6f ? Vector2.Normalize(blended) : to;
+    }
 }

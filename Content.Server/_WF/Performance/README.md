@@ -169,6 +169,8 @@ Small fixes for hot spots found in live server profiles, kept as narrow hooks in
 - [`Content.Client/Pinpointer/NavMapSystem.cs`](../../../Content.Client/Pinpointer/NavMapSystem.cs): removals are named directly
 - [`Content.Client/Shuttles/UI/ShuttleNavControl.xaml.cs`](../../../Content.Client/Shuttles/UI/ShuttleNavControl.xaml.cs)
   - a zero interval made the gate always pass and the sweep divide by zero.
+  - the sweep hand's own timer, since the request accumulator is zeroed each frame
+  - the sweep hand turns on its own timer, so it keeps moving while requests are throttled
   - this divided by a zero interval and drew the sweep to a NaN point every frame
   - distant rocks from their field lists
 - [`Content.Client/Weapons/Ranged/Systems/GunSystem.cs`](../../../Content.Client/Weapons/Ranged/Systems/GunSystem.cs): wizden#36641, was EntityUid

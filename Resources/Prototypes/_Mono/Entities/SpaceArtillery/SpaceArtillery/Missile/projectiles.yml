@@ -135,6 +135,13 @@
     notchBand: 6
     notchMemory: 1
     memoryTime: 1.5
+    launchTransient: 0.5
+    launchTurnMultiplier: 3
+    launchDamping: 0.1
+    launchAcquireCone: 60
+    launchAcquireRange: 1200
+    launchOffBoresight: 120
+    snapFraction: 1
   # WOLFGATE END
   - type: Destructible
     thresholds:
@@ -210,6 +217,12 @@
     notchBand: 4
     notchMemory: 1.5
     memoryTime: 2
+    launchTransient: 0.35
+    launchTurnMultiplier: 2.5
+    launchDamping: 0.15
+    launchAcquireCone: 45
+    launchAcquireRange: 1600
+    launchOffBoresight: 90
   # WOLFGATE END
 
 - type: entity
@@ -234,6 +247,7 @@
     maxSpeed: 300
     lateralAccel: 0
     divertBudget: 0
+    launchTransient: 0
   # WOLFGATE END
   - type: Explosive
     explosionType: Default
@@ -303,6 +317,12 @@
     notchBand: 4
     notchMemory: 2
     memoryTime: 2.2
+    launchTransient: 0.4
+    launchTurnMultiplier: 2
+    launchDamping: 0.15
+    launchAcquireCone: 35
+    launchAcquireRange: 2400
+    launchOffBoresight: 75
   # WOLFGATE END
 
 - type: entity
@@ -364,6 +384,12 @@
     notchBand: 3
     notchMemory: 1.2
     memoryTime: 1
+    launchTransient: 0.25
+    launchTurnMultiplier: 1.5
+    launchDamping: 0.2
+    launchAcquireCone: 25
+    launchAcquireRange: 700
+    launchOffBoresight: 45
   # WOLFGATE END
 
 - type: entity
@@ -428,6 +454,12 @@
     notchBand: 4
     notchMemory: 2
     memoryTime: 2.2
+    launchTransient: 0.4
+    launchTurnMultiplier: 2
+    launchDamping: 0.15
+    launchAcquireCone: 35
+    launchAcquireRange: 2400
+    launchOffBoresight: 75
   # WOLFGATE END
 
 # Serpent Torpedo

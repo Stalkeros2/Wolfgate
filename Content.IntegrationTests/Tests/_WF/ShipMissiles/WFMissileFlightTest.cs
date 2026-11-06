@@ -87,12 +87,10 @@ public sealed class WFMissileFlightTest
             xform.SetWorldRotation(missile, Angle.Zero);
         });
 
-        await pair.RunTicksSync(60);
+        await pair.RunTicksSync(20);
 
         await pair.Server.WaitAssertion(() =>
         {
-            Assert.That(em.Deleted(missile), Is.False, "The missile must not have flown 600 m in a second.");
-
             var flight = em.GetComponent<WFMissileFlightComponent>(missile);
             var seeker = em.GetComponent<TargetSeekingComponent>(missile);
             var body = em.GetComponent<PhysicsComponent>(missile);
@@ -103,12 +101,56 @@ public sealed class WFMissileFlightTest
                 Assert.That(seeker.CurrentTarget, Is.EqualTo(map.Grid.Owner),
                     "The carrier must have acquired the painted hull.");
                 Assert.That(flight.Seeker, Is.EqualTo(WFMissileSeekerState.Tracking), "A parked hull is not a notch.");
-                Assert.That(flight.Divert, Is.LessThan(flight.DivertBudget), "Leading the hull must spend diverters.");
+                Assert.That(flight.Divert, Is.EqualTo(flight.DivertBudget), "The launch transient is free.");
                 Assert.That(body.LinearVelocity.X, Is.GreaterThan(0f), "The motor must push down the nose.");
-                Assert.That(body.LinearVelocity.Y, Is.GreaterThan(0f),
-                    "Proportional navigation must turn towards the hull, which is to +y.");
                 Assert.That(body.LinearVelocity.Length(), Is.LessThanOrEqualTo(flight.MaxSpeed + 0.5f),
                     "The speed cap must hold.");
+            });
+        });
+    }
+
+    /// <summary>
+    /// Handed 45 degrees off its nose, the missile still locks during the launch transient and takes the bearing: the
+    /// ASM-50's own 7.5 degree scan arc would never see that hull.
+    /// </summary>
+    [Test]
+    public async Task SoftLaunchTakesTheBearing()
+    {
+        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Dirty = true });
+        var map = await pair.CreateTestMap();
+        var em = pair.Server.EntMan;
+        var xform = em.System<SharedTransformSystem>();
+
+        EntityUid missile = default;
+
+        await pair.Server.WaitAssertion(() =>
+        {
+            // The painted hull sits on the grid at its origin; the missile is 600 m out, 45 degrees off the bearing.
+            var painted = em.SpawnEntity(null, map.GridCoords);
+            xform.AnchorEntity(painted);
+            em.AddComponent<TargetSeekingTargetComponent>(painted);
+
+            missile = em.SpawnEntity("MissileProjectile50mmHE",
+                new EntityCoordinates(map.MapUid, new Vector2(-424f, -424f)));
+            xform.SetWorldRotation(missile, Angle.FromDegrees(90)); // +x: a quarter turn in world angles
+        });
+
+        await pair.RunTicksSync(12);
+
+        await pair.Server.WaitAssertion(() =>
+        {
+            var flight = em.GetComponent<WFMissileFlightComponent>(missile);
+            var seeker = em.GetComponent<TargetSeekingComponent>(missile);
+            var body = em.GetComponent<PhysicsComponent>(missile);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(seeker.CurrentTarget, Is.EqualTo(map.Grid.Owner),
+                    "The launch cone must lock what the scan arc alone would miss.");
+                Assert.That(flight.LaunchTimer, Is.GreaterThan(0f), "The launch transient is still running.");
+                Assert.That(flight.Divert, Is.EqualTo(flight.DivertBudget), "Off-rail stabilisation is free.");
+                Assert.That(body.LinearVelocity.X, Is.GreaterThan(0f), "The launch impulse runs down the nose.");
+                Assert.That(body.LinearVelocity.Y, Is.GreaterThan(0f), "Steering turns onto the off-axis hull.");
             });
         });
     }
