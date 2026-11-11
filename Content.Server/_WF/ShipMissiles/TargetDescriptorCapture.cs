@@ -1,6 +1,5 @@
 using System.Numerics;
 using Content.Server._Mono.Projectiles.TargetSeeking;
-using Robust.Server.GameObjects;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Physics.Systems;
@@ -25,10 +24,10 @@ public static class TargetDescriptorCapture
 
     /// <summary>Snapshot the target onto the missile's descriptor, if not yet captured.</summary>
     public static void FromEntity(
-        IEntityManager entities, PhysicsSystem physics, SharedTransformSystem xform,
+        IEntityManager entities, SharedPhysicsSystem physics, SharedTransformSystem xform,
         WFMissileFlightComponent flight, EntityUid targetUid)
     {
-        if (flight.DescriptorCaptured || entities.TerminatingOrDeleted(targetUid))
+        if (flight.DescriptorCaptured || !entities.EntityExists(targetUid))
             return;
 
         var targetXform = entities.GetComponent<TransformComponent>(targetUid);

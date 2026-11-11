@@ -2,7 +2,9 @@ using System.Collections.Generic;
 using System.Numerics;
 using Content.Server._Mono.Projectiles.TargetSeeking;
 using Content.Server._WF.ShipMissiles;
+using Content.Server.Shuttles.Components;
 using Content.Shared.Tiles;
+using Content.Shared.Cargo.Components;
 using NUnit.Framework;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
@@ -10,6 +12,7 @@ using Robust.Shared.Map.Components;
 using Robust.Shared.Maths;
 using Robust.Shared.Physics;
 using Robust.Shared.Physics.Components;
+using Robust.Shared.Physics.Systems;
 
 namespace Content.IntegrationTests.Tests._WF.ShipMissiles;
 
@@ -181,8 +184,7 @@ public sealed class WFMissileFlightTest
             xform.SetWorldRotation(missile, Angle.FromDegrees(90)); // +x
 
             // Designated is what "the player clicked": the far hull.
-            em.GetComponent<WFMissileFlightComponent>(missile).Designated =
-                xform.ToMapCoordinates(xform.GetMapCoordinates(far));
+            var ec = xform.GetMapCoordinates(far); em.GetComponent<WFMissileFlightComponent>(missile).Designated = new MapCoordinates(ec.Position, ec.MapId);
         });
 
         await pair.Server.WaitRunTicks(20);
