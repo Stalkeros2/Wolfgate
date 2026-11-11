@@ -13,6 +13,7 @@ public sealed partial class FireControlSystem
 {
     [Dependency] private TargetGuidedSystem _targetGuided = null!;
     [Dependency] private Content.Server._WF.BoardingAction.WFHackHarpoonSystem _wfHack = default!; // WOLFGATE(BoardingAction)
+    [Dependency] private Content.Server._WF.ShipMissiles.WFMissileFlightSystem _wfMissileFlight = default!; // WOLFGATE(MissileGuidance)
 
     /// <summary>
     /// List of active guided missiles that need cursor position updates
@@ -95,6 +96,8 @@ public sealed partial class FireControlSystem
                 !_wfHack.RefusesGuidance(projectileUid, targetCoords.Value))
             {
                 wfMissile.Designated = _xform.ToMapCoordinates(targetCoords.Value);
+                _wfMissileFlight.CaptureDescriptorFromCoordinate(wfMissile, wfMissile.Designated.Value,
+                    Transform(projectileUid)); // added
             }
         }
         // WOLFGATE END

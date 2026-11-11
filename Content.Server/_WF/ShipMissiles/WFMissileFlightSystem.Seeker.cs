@@ -3,6 +3,7 @@ using System.Numerics;
 using Content.Server._Mono.Projectiles.TargetSeeking;
 using Content.Shared._WF.ShipMissiles;
 using Robust.Shared.GameObjects;
+using Robust.Shared.Map;
 using Robust.Shared.Physics.Components;
 
 namespace Content.Server._WF.ShipMissiles;
@@ -30,7 +31,6 @@ public sealed partial class WFMissileFlightSystem
         var target = carrier.CurrentTarget;
         if (target is not { } targetUid || TerminatingOrDeleted(targetUid))
         {
-            // Nothing to be blind about, and nothing to remember.
             flight.Seeker = WFMissileSeekerState.Tracking;
             flight.NotchTimer = 0f;
             flight.MemoryTimer = 0f;
@@ -81,12 +81,10 @@ public sealed partial class WFMissileFlightSystem
             }
         }
 
-        // Notched: fly the last good track. The seeker is not seeing the target, so the track is not refreshed.
         flight.MemoryTimer += frameTime;
 
         if (!beaming)
         {
-            // The geometry opened again: the seeker picks the target back up rather than staying dead for the flight.
             flight.Seeker = WFMissileSeekerState.Tracking;
             flight.NotchTimer = 0f;
             flight.KnownPosition = targetPos;
@@ -100,7 +98,6 @@ public sealed partial class WFMissileFlightSystem
         {
             flight.Seeker = WFMissileSeekerState.Lost;
             _targetSeeking.SetSeekerTarget((uid, carrier), null, xform);
-            // Upstream would reacquire the same hull on its next tick; a lost seeker stays lost.
             carrier.SeekingDisabled = true;
             return false;
         }
@@ -108,5 +105,33 @@ public sealed partial class WFMissileFlightSystem
         aimPos = flight.KnownPosition + flight.KnownVelocity * flight.MemoryTimer;
         aimVel = flight.KnownVelocity;
         return true;
+    }
+
+    /// <summary>
+    /// Snapshot the target nearest the fire-control click, if this is a smart missile.
+    /// Called from the fire path, before the missile's first tick.
+    /// </summary>
+    public void CaptureDescriptorFromCoordinate(WFMissileFlightComponent flight, MapCoordinates designated, TransformComponent missileXform)
+    {
+        if (!flight.DescriptorSeeking || flight.DescriptorCaptured)
+            return;
+
+        EntityUid? best = null;
+        var bestDistance = flight.DescriptorSnapRadius;
+
+        var query = EntityQueryEnumerator<TargetSeekingTargetComponent, TransformComponent>();
+        while (query.MoveNext(out var uid, out _, out var targetXform))
+        {
+            if (targetXform.MapID != designated.MapId)
+                continue;
+            var distance = Vector2.Distance(_transform.GetWorldPosition(targetXform), designated.Position);
+            if (distance >= bestDistance)
+                continue;
+            best = uid;
+            bestDistance = distance;
+        }
+
+        if (best != null)
+            TargetDescriptorCapture.FromEntity(EntityManager, _physics, _transform, flight, best.Value);
     }
 }

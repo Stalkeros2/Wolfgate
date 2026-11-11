@@ -14,6 +14,8 @@ using Robust.Server.GameObjects;
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
+using Content.Server._WF.ShipMissiles;
+using Content.Shared._WF.ShipMissiles;
 
 namespace Content.Server._Mono.Projectiles.TargetSeeking;
 
@@ -212,31 +214,33 @@ public sealed partial class TargetSeekingSystem : EntitySystem
         }
     }
 
-    /// <summary>
+        /// <summary>
     /// Finds the closest valid target within range and tracking parameters.
     /// </summary>
     public void AcquireTarget(EntityUid uid, TargetSeekingComponent component, TransformComponent transform)
     {
-        // WOLFGATE(Performance) START: mines (zero scan arc) never acquire; hoist the per-seeker values out of the loop
         if (component.ScanArc <= 0f)
             return;
 
         var sourceMap = transform.MapID;
         var sourcePos = _transform.GetWorldPosition(transform);
         var currentRotation = _transform.GetWorldRotation(transform);
+
+        // WOLFGATE(ShipMissiles) START: descriptor-aware acquisition for smart missiles
+        TryComp<WFMissileFlightComponent>(uid, out var wfFlight);
+        var descriptorSeeking = wfFlight is { DescriptorSeeking: true, DescriptorCaptured: true };
+        var bestCost = float.MaxValue;
         // WOLFGATE END
 
         var closestDistance = float.MaxValue;
         EntityUid? bestTarget = null;
 
-        // Look for shuttles to target
         var shuttleQuery = EntityQueryEnumerator<TargetSeekingTargetComponent>();
 
         while (shuttleQuery.MoveNext(out var targetUid, out _))
         {
             var targetXform = Transform(targetUid);
 
-            // WOLFGATE(Performance) START: other maps and out-of-range consoles are rejected before the angle math
             if (targetXform.MapID != sourceMap)
                 continue;
 
@@ -244,48 +248,42 @@ public sealed partial class TargetSeekingSystem : EntitySystem
             var distance = Vector2.Distance(sourcePos, targetPos);
             if (distance > component.DetectionRange)
                 continue;
-            // WOLFGATE END
 
-            // If this entity has a grid UID, use that as our actual target
-            // This targets the ship grid rather than just the console
             var actualTarget = targetXform.GridUid ?? targetUid;
 
-            // Get angle to the target
-            // var targetPos = _transform.ToMapCoordinates(targetXform.Coordinates).Position; // WOLFGATE(Performance): hoisted above
-            // var sourcePos = _transform.ToMapCoordinates(transform.Coordinates).Position; // WOLFGATE(Performance): hoisted above
             var angleToTarget = (targetPos - sourcePos).ToWorldAngle();
-
-            // Get current direction of the projectile
-            // var currentRotation = _transform.GetWorldRotation(transform); // WOLFGATE(Performance): hoisted above
-
-            // Check if target is within field of view
             var angleDifference = Angle.ShortestDistance(currentRotation, angleToTarget).Degrees;
             if (MathF.Abs((float)angleDifference) > component.ScanArc / 2)
-            {
-                continue; // Target is outside our field of view
-            }
+                continue;
 
-            // Calculate distance to target
-            // var distance = Vector2.Distance(sourcePos, targetPos); // WOLFGATE(Performance): computed and range-tested above
-            // if (distance > component.DetectionRange) continue; // WOLFGATE(Performance): see above
-
-            // Skip if the target is our own launcher (don't target our own ship)
             if (_projectileQuery.TryGetComponent(uid, out var projectile) &&
                 TryComp(projectile.Shooter, out TransformComponent? shooterTransform))
             {
                 var shooterGridUid = shooterTransform.GridUid;
-
-                // If the shooter is on the same grid as this potential target, skip it
                 if (targetXform.GridUid.HasValue && shooterGridUid == targetXform.GridUid)
-                {
                     continue;
-                }
-
-                if (_wfHack.IsLockedOut(shooterGridUid, actualTarget)) // WOLFGATE(BoardingAction): a locked-down ship's seekers can't take the hacker.
+                if (_wfHack.IsLockedOut(shooterGridUid, actualTarget))
                     continue;
             }
 
-            // If this is closer than our previous best target, update
+            // WOLFGATE(ShipMissiles) START: score against descriptor for smart missiles
+            if (descriptorSeeking)
+            {
+                _physicsQuery.TryGetComponent(targetUid, out var candidateBody);
+                var candidateVel = _physics.GetMapLinearVelocity(targetUid, candidateBody, targetXform);
+                var candidateRadius = TargetDescriptorCapture.Radius(EntityManager, targetUid, targetXform);
+                var cost = MissileGuidance.DescriptorMatch(
+                    candidateVel, candidateRadius,
+                    wfFlight!.DescriptorVelocity, wfFlight.DescriptorRadius,
+                    wfFlight.DescriptorSizeTolerance, wfFlight.DescriptorSpeedTolerance, wfFlight.DescriptorHeadingTolerance)
+                    + distance * 0.001f;
+                if (cost >= bestCost)
+                    continue;
+                bestCost = cost;
+                bestTarget = actualTarget;
+            }
+            else
+            // WOLFGATE END
             if (closestDistance > distance)
             {
                 closestDistance = distance;
@@ -293,9 +291,14 @@ public sealed partial class TargetSeekingSystem : EntitySystem
             }
         }
 
-        // Set our new target
         if (bestTarget.HasValue)
+        {
             SetSeekerTarget((uid, component), bestTarget, transform);
+            // WOLFGATE(ShipMissiles) START: fallback capture when fire-time didn't get one
+            if (wfFlight is { DescriptorSeeking: true, DescriptorCaptured: false })
+                TargetDescriptorCapture.FromEntity(EntityManager, _physics, _transform, wfFlight, bestTarget.Value);
+            // WOLFGATE END
+        }
     }
 
     /// <summary>
