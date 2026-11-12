@@ -1,0 +1,7 @@
+wf-lockon-acquired = Lock acquired: { $target }
+wf-lockon-released = Lock released
+wf-lockon-out-of-range = Target out of lock range
+wf-lockon-status = LOCK: { $target }
+wf-lockon-alert = { $ship } has a firing solution on this vessel.
+wf-lockon-alert-sender = Tactical
+wf-lockon-debug = T { $time }s  Vt { $target }  Vg { $muzzle }  S { $speed }  L { $lead }m

@@ -115,7 +115,7 @@ reloads itself.
 - [`Content.Server/_Mono/FireControl/FireControlSystem.Console.cs`](../../_Mono/FireControl/FireControlSystem.Console.cs): tell the gunner why locked guns stay silent.
 - [`Content.Server/_Mono/FireControl/FireControlSystem.TargetGuided.cs`](../../_Mono/FireControl/FireControlSystem.TargetGuided.cs): a locked-down ship can't launch a missile at the hacker.
 - [`Content.Server/_Mono/Projectiles/TargetGuided/TargetGuidedSystem.cs`](../../_Mono/Projectiles/TargetGuided/TargetGuidedSystem.cs): a locked-down ship can't steer a missile onto the hacker.
-- [`Content.Server/_Mono/Projectiles/TargetSeeking/TargetSeekingSystem.cs`](../../_Mono/Projectiles/TargetSeeking/TargetSeekingSystem.cs): a locked-down ship's seekers can't take the hacker.
+- [`Content.Server/_Mono/Projectiles/TargetSeeking/TargetSeekingSystem.cs`](../../_Mono/Projectiles/TargetSeeking/TargetSeekingSystem.cs)
 - [`Content.Server/_NF/Shuttles/Systems/ShuttleSystem.cs`](../../_NF/Shuttles/Systems/ShuttleSystem.cs)
   - a lockdown holds the dampening, which steering otherwise sets every update
   - the helm has to show the refused mode didn't take
