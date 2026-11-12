@@ -32,7 +32,9 @@ public sealed partial class GenitalCoverageSystem : EntitySystem
                 undergarments |= GenitalRegion.Groin;
         }
 
-        return new GenitalCoverage(clothing, chestCover, groinCover, undergarments);
+        // Only a region that is actually worn can be displaced; the flag alone exposes nothing.
+        var displaced = ent.Comp1.Displaced & clothing;
+        return new GenitalCoverage(clothing, chestCover, groinCover, undergarments, displaced);
     }
 
     /// <summary>Body region of a slot. Breasts use their shape's region (udders are Groin); the womb has none.</summary>
@@ -61,7 +63,9 @@ public sealed partial class GenitalCoverageSystem : EntitySystem
 
         var region = GetRegion(ent, slot);
         var preview = ent.Comp.PreviewMode;
-        var cloth = preview < GenitalPreviewMode.UnderwearOnly && (coverage.Clothing & region) != 0;
+        // Clothing moved aside leaves the region open while the garment stays worn and drawn.
+        var displaced = (coverage.Displaced & region) != 0;
+        var cloth = preview < GenitalPreviewMode.UnderwearOnly && (coverage.Clothing & region) != 0 && !displaced;
         var under = preview != GenitalPreviewMode.Nude
                     && ent.Comp.RevealMode == GenitalRevealMode.UndergarmentRemoval
                     && (coverage.Undergarments & region) != 0;
@@ -75,8 +79,29 @@ public sealed partial class GenitalCoverageSystem : EntitySystem
                 return new GenitalExposure(true, true, cloth ? GenitalLayerSet.Over : GenitalLayerSet.Under, coveredBy, under);
             default:
                 var exposed = !cloth && !under;
-                return new GenitalExposure(true, exposed, exposed ? GenitalLayerSet.Under : GenitalLayerSet.Hidden, coveredBy, under);
+                var layer = !exposed
+                    ? GenitalLayerSet.Hidden
+                    : displaced && (coverage.Clothing & region) != 0
+                        ? GenitalLayerSet.Over
+                        : GenitalLayerSet.Under;
+                return new GenitalExposure(true, exposed, layer, coveredBy, under);
         }
+    }
+
+    /// <summary>
+    /// Whether a region is open at the skin: clothing moved aside, nothing worn, or an undergarment that the reveal mode
+    /// does not count. The single answer every intimacy act and the examine card share.
+    /// </summary>
+    public bool IsRegionOpen(GenitalsComponent genitals, GenitalRegion region, in GenitalCoverage coverage)
+    {
+        if ((coverage.Displaced & region) != 0)
+            return true;
+
+        if ((coverage.Clothing & region) != 0)
+            return false;
+
+        return genitals.RevealMode != GenitalRevealMode.UndergarmentRemoval
+               || (coverage.Undergarments & region) == 0;
     }
 
     /// <summary>For stripping: is the region covered by clothing (undergarments ignored)?</summary>
@@ -144,12 +169,13 @@ public sealed partial class GenitalCoverageSystem : EntitySystem
     }
 }
 
-/// <summary>Coverage of one body: clothing (with the outermost covering item per region) and undergarments.</summary>
+/// <summary>Coverage of one body: clothing (with the outermost covering item per region), undergarments and displaced regions.</summary>
 public readonly record struct GenitalCoverage(
     GenitalRegion Clothing,
     EntityUid? ChestCover,
     EntityUid? GroinCover,
-    GenitalRegion Undergarments)
+    GenitalRegion Undergarments,
+    GenitalRegion Displaced = GenitalRegion.None)
 {
     /// <summary>Outermost clothing covering the region; the groin cover wins for a mask naming both regions.</summary>
     public EntityUid? CoverFor(GenitalRegion region)

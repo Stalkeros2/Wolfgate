@@ -82,6 +82,13 @@ public sealed partial class GenitalSettingsPrototype : IPrototype
     [DataField]
     public ProtoId<ConsentTogglePrototype>? SurgeryConsent;
 
+    /// <summary>
+    /// Toggle a body needs before its arousal builds on its own (WFAutoArousal); while it is on, the owner's panel may
+    /// only lower arousal. Unset leaves the panel fully manual.
+    /// </summary>
+    [DataField]
+    public ProtoId<ConsentTogglePrototype>? AutoArousalConsent;
+
     /// <summary>Pixel offsets per species and region, applied to every anatomy layer of that region (+y is up).</summary>
     [DataField]
     public Dictionary<ProtoId<SpeciesPrototype>, Dictionary<GenitalRegion, Vector2i>> SpeciesOffsets = new();

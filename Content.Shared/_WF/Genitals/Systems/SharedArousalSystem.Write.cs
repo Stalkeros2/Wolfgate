@@ -55,6 +55,15 @@ public sealed partial class SharedArousalSystem
         return true;
     }
 
+    /// <summary>Natural drift: lowers arousal without the interaction gates, since no one is acting on the body.</summary>
+    public void DecayArousal(Entity<GenitalsComponent> ent, float delta)
+    {
+        if (delta <= 0f || ent.Comp.Arousal == 0)
+            return;
+
+        Apply(ent, (byte) Math.Max(0f, ent.Comp.Arousal - delta), null);
+    }
+
     /// <summary>Admin repair: arousal to 0 through Apply, without the consent and life gates.</summary>
     public void ResetArousal(Entity<GenitalsComponent> ent)
     {

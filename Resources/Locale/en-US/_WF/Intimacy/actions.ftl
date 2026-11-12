@@ -1,0 +1,77 @@
+wf-verb-category-intimacy = Intimacy
+wf-verb-category-intimacy-self = Intimacy
+
+wf-intimacy-act-wave = Wave
+wf-intimacy-act-handshake = Handshake
+wf-intimacy-act-hug = Hug
+wf-intimacy-act-high-five = High five
+wf-intimacy-act-pat = Pat
+wf-intimacy-act-beacon = Beacon
+wf-intimacy-act-grind = Grind against
+wf-intimacy-act-kiss = Kiss
+wf-intimacy-act-touch = Touch
+wf-intimacy-act-hands = Use hands on
+wf-intimacy-act-oral = Use mouth on
+wf-intimacy-act-penetrate-front = Penetrate
+wf-intimacy-act-penetrate-rear = Take from behind
+wf-intimacy-act-penetrate-front-reversed = Be penetrated (front)
+wf-intimacy-act-penetrate-rear-reversed = Be penetrated (rear)
+wf-intimacy-act-ride-front = Ride (front)
+wf-intimacy-act-ride-rear = Ride (rear)
+wf-intimacy-act-ride-front-reversed = Be ridden (front)
+wf-intimacy-act-ride-rear-reversed = Be ridden (rear)
+wf-intimacy-act-oral-giver = Receive oral
+wf-intimacy-act-suck-chest = Have nipples sucked
+wf-intimacy-act-paizuri = Paizuri
+wf-intimacy-act-thighjob = Thighjob
+wf-intimacy-act-fondle-groin = Fondle groin
+wf-intimacy-act-fondle-chest = Fondle chest
+wf-intimacy-act-rub-groin = Rub groin
+wf-intimacy-act-caress-chest = Caress chest
+wf-intimacy-act-stroke-groin = Stroke groin
+
+wf-intimacy-verb-stop = Stop
+wf-intimacy-verb-autothrust-on = Let it repeat on its own
+wf-intimacy-verb-autothrust-off = Stop repeating
+wf-intimacy-verb-displace-chest = Move clothing aside (chest)
+wf-intimacy-verb-displace-groin = Move clothing aside (groin)
+wf-intimacy-verb-settle-chest = Settle clothing (chest)
+wf-intimacy-verb-settle-groin = Settle clothing (groin)
+
+wf-intimacy-fail-self = You cannot do that to yourself.
+wf-intimacy-fail-disabled = Anatomy is switched off here.
+wf-intimacy-fail-dead = That body is dead.
+wf-intimacy-fail-range = You are too far away.
+wf-intimacy-fail-no-anatomy = That body has nothing to act on.
+wf-intimacy-fail-consent = They have not allowed this.
+wf-intimacy-fail-give-consent = You have not allowed yourself to start this.
+wf-intimacy-fail-busy = One of you is already busy.
+wf-intimacy-fail-giver-organ = You do not have what this needs.
+wf-intimacy-fail-receiver-organ = They do not have what this needs.
+wf-intimacy-fail-giver-covered = Your clothing is in the way.
+wf-intimacy-fail-covered = Their clothing is in the way.
+wf-intimacy-fail-giver-posture = You are not in the right position.
+wf-intimacy-fail-posture = They are not in the right position.
+
+wf-intimacy-start-user = You start { $act } with { $target }.
+wf-intimacy-start-target = { $user } starts { $act } with you.
+wf-intimacy-act-user = { $act } — { $target }.
+wf-intimacy-act-target = { $act } — { $user }.
+wf-intimacy-dry-user = { $target } is dry; it is not doing much.
+wf-intimacy-dry-target = You are dry; it is not doing much.
+wf-intimacy-orgasm-user = You finish.
+wf-intimacy-orgasm-target = { $user } finishes.
+
+wf-intimacy-climax-self-inside = You climax inside { $partner }.
+wf-intimacy-climax-self-inside-where = You climax inside { $partner } { $where }.
+wf-intimacy-climax-self-outside = You climax on { $partner }.
+wf-intimacy-climax-self-outside-where = You climax on { $partner } { $where }.
+wf-intimacy-climax-partner-inside = { $user } climaxes inside you.
+wf-intimacy-climax-partner-inside-where = { $user } climaxes inside you { $where }.
+wf-intimacy-climax-partner-outside = { $user } climaxes on you.
+wf-intimacy-climax-partner-outside-where = { $user } climaxes on you { $where }.
+wf-intimacy-stopped-user = You stop.
+wf-intimacy-stopped-target = It stops.
+
+wf-intimacy-verb-interact = Interactions…
+wf-verb-category-interactions = Interactions

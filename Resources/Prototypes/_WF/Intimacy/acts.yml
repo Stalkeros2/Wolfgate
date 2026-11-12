@@ -1,0 +1,405 @@
+# Intimate and platonic acts. References: ids in consent.yml, names in Locale/en-US/_WF/Intimacy.
+# Acts are directional: the giver is the player choosing the verb, the receiver is the body they clicked.
+
+# Platonic fallbacks: no consent toggles, no anatomy, always available to anyone adjacent.
+
+- type: intimacyAct
+  id: WFActWave
+  name: wf-intimacy-act-wave
+  kind: Platonic
+  range: -1       # no distance limit: a wave carries across the room
+  priority: 0
+
+- type: intimacyAct
+  id: WFActHandshake
+  name: wf-intimacy-act-handshake
+  kind: Platonic
+  priority: 1
+
+- type: intimacyAct
+  id: WFActHug
+  name: wf-intimacy-act-hug
+  kind: Platonic
+  priority: 2
+
+- type: intimacyAct
+  id: WFActHighFive
+  name: wf-intimacy-act-high-five
+  kind: Platonic
+  priority: 3
+
+- type: intimacyAct
+  id: WFActPat
+  name: wf-intimacy-act-pat
+  kind: Platonic
+  priority: 4
+
+- type: intimacyAct
+  id: WFActBeacon
+  name: wf-intimacy-act-beacon
+  kind: Platonic
+  priority: 5
+
+# Clothed: no region requirement, so they work through clothing and build arousal slowly.
+
+- type: intimacyAct
+  id: WFActGrind
+  name: wf-intimacy-act-grind
+  kind: Manual
+  consent: WFIntimacyManual
+  giverConsent: WFIntimacyGive
+  arousalGain: 5
+  pleasureGain: 3
+  wetnessGain: 2
+  pulseInterval: 1.6
+  priority: 10
+
+- type: intimacyAct
+  id: WFActKiss
+  name: wf-intimacy-act-kiss
+  kind: Manual
+  consent: WFIntimacyManual
+  arousalGain: 3
+  pleasureGain: 2
+  giverShare: 0.6
+  pulseInterval: 2
+  priority: 11
+
+# Bare skin: the receiver's region has to be open, by removal or by clothing moved aside.
+
+- type: intimacyAct
+  id: WFActTouch
+  name: wf-intimacy-act-touch
+  kind: Manual
+  receiverRegion: Chest
+  consent: WFIntimacyManual
+  arousalGain: 4
+  pleasureGain: 3
+  giverShare: 0.5
+  pulseInterval: 1.6
+  priority: 20
+
+- type: intimacyAct
+  id: WFActHands
+  name: wf-intimacy-act-hands
+  kind: Manual
+  receiverRegion: Groin
+  consent: WFIntimacyManual
+  arousalGain: 5
+  pleasureGain: 6
+  giverShare: 0.5
+  wetnessGain: 3
+  pulseInterval: 1.4
+  priority: 21
+
+- type: intimacyAct
+  id: WFActOral
+  name: wf-intimacy-act-oral
+  kind: Oral
+  receiverRegion: Groin
+  giverPosture: Standing,Buckled,Lying
+  receiverPosture: Standing,Buckled,Lying
+  consent: WFIntimacyOral
+  arousalGain: 5
+  pleasureGain: 8
+  giverShare: 0.4
+  wetnessGain: 5
+  pulseInterval: 1.6
+  priority: 30
+
+# Penetrative: the giver needs a penis, the receiver needs the slot the act is meant for.
+
+- type: intimacyAct
+  id: WFActPenetrateFront
+  name: wf-intimacy-act-penetrate-front
+  kind: Penetrative
+  giverOrgan: Penis
+  receiverOrgan: Vagina
+  giverRegion: Groin
+  receiverRegion: Groin
+  giverPosture: Standing,Buckled,Lying
+  receiverPosture: Standing,Buckled,Lying
+  consent: WFIntimacyPenetrative
+  arousalGain: 7
+  pleasureGain: 9
+  giverShare: 0.5
+  wetnessGain: 6
+  pulseInterval: 1.2
+  priority: 40
+
+# Rear needs no organ on the receiver, only an open groin, so a body without a vagina can still take it.
+
+- type: intimacyAct
+  id: WFActPenetrateRear
+  name: wf-intimacy-act-penetrate-rear
+  kind: Penetrative
+  giverOrgan: Penis
+  giverRegion: Groin
+  receiverRegion: Groin
+  giverPosture: Standing,Buckled,Lying
+  receiverPosture: Buckled,Lying
+  consent: WFIntimacyPenetrative
+  arousalGain: 7
+  pleasureGain: 8
+  giverShare: 0.5
+  wetnessGain: 4
+  pulseInterval: 1.2
+  priority: 41
+
+# Role reversal: receiver penetrates giver (front). Giver takes the penis.
+- type: intimacyAct
+  id: WFActPenetrateFrontReversed
+  name: wf-intimacy-act-penetrate-front-reversed
+  kind: Penetrative
+  giverOrgan: Vagina
+  receiverOrgan: Penis
+  giverRegion: Groin
+  giverPosture: Standing,Buckled,Lying
+  receiverPosture: Standing,Buckled,Lying
+  consent: WFIntimacyPenetrative
+  arousalGain: 7
+  pleasureGain: 9
+  giverShare: 0.5
+  wetnessGain: 6
+  pulseInterval: 1.2
+  invertPleasure: true
+  priority: 42
+
+# Role reversal: receiver penetrates giver (rear).
+- type: intimacyAct
+  id: WFActPenetrateRearReversed
+  name: wf-intimacy-act-penetrate-rear-reversed
+  kind: Penetrative
+  giverRegion: Groin
+  receiverOrgan: Penis
+  giverPosture: Standing,Buckled,Lying
+  receiverPosture: Buckled,Lying
+  consent: WFIntimacyPenetrative
+  arousalGain: 7
+  pleasureGain: 8
+  giverShare: 0.5
+  wetnessGain: 4
+  pulseInterval: 1.2
+  invertPleasure: true
+  priority: 43
+
+# Receiver rides giver (front). Same anatomy as penetrate-front, different flavor.
+- type: intimacyAct
+  id: WFActRideFront
+  name: wf-intimacy-act-ride-front
+  kind: Penetrative
+  giverOrgan: Penis
+  receiverOrgan: Vagina
+  giverRegion: Groin
+  receiverRegion: Groin
+  giverPosture: Standing,Buckled,Lying
+  receiverPosture: Standing,Buckled,Lying
+  consent: WFIntimacyPenetrative
+  arousalGain: 7
+  pleasureGain: 9
+  giverShare: 0.5
+  wetnessGain: 6
+  pulseInterval: 1.2
+  priority: 44
+
+# Receiver rides giver (rear).
+- type: intimacyAct
+  id: WFActRideRear
+  name: wf-intimacy-act-ride-rear
+  kind: Penetrative
+  giverOrgan: Penis
+  giverRegion: Groin
+  receiverRegion: Groin
+  giverPosture: Standing,Buckled,Lying
+  receiverPosture: Buckled,Lying
+  consent: WFIntimacyPenetrative
+  arousalGain: 7
+  pleasureGain: 8
+  giverShare: 0.5
+  wetnessGain: 4
+  pulseInterval: 1.2
+  priority: 45
+
+# Role reversal: giver rides receiver (front).
+- type: intimacyAct
+  id: WFActRideFrontReversed
+  name: wf-intimacy-act-ride-front-reversed
+  kind: Penetrative
+  giverOrgan: Vagina
+  receiverOrgan: Penis
+  giverRegion: Groin
+  giverPosture: Standing,Buckled,Lying
+  receiverPosture: Standing,Buckled,Lying
+  consent: WFIntimacyPenetrative
+  arousalGain: 7
+  pleasureGain: 9
+  giverShare: 0.5
+  wetnessGain: 6
+  pulseInterval: 1.2
+  invertPleasure: true
+  priority: 46
+
+# Role reversal: giver rides receiver (rear).
+- type: intimacyAct
+  id: WFActRideRearReversed
+  name: wf-intimacy-act-ride-rear-reversed
+  kind: Penetrative
+  giverRegion: Groin
+  receiverOrgan: Penis
+  giverPosture: Standing,Buckled,Lying
+  receiverPosture: Buckled,Lying
+  consent: WFIntimacyPenetrative
+  arousalGain: 7
+  pleasureGain: 8
+  giverShare: 0.5
+  wetnessGain: 4
+  pulseInterval: 1.2
+  invertPleasure: true
+  priority: 47
+
+# Oral: receiver uses mouth on giver's groin (blowjob from either side).
+- type: intimacyAct
+  id: WFActOralGiver
+  name: wf-intimacy-act-oral-giver
+  kind: Oral
+  giverRegion: Groin
+  giverPosture: Standing,Buckled,Lying
+  receiverPosture: Standing,Buckled,Lying
+  consent: WFIntimacyOral
+  arousalGain: 5
+  pleasureGain: 8
+  giverShare: 0.4
+  wetnessGain: 5
+  pulseInterval: 1.6
+  invertPleasure: true
+  priority: 31
+
+# Manual: receiver sucks on giver's nipples.
+- type: intimacyAct
+  id: WFActSuckChest
+  name: wf-intimacy-act-suck-chest
+  kind: Oral
+  giverRegion: Chest
+  giverPosture: Standing,Buckled,Lying
+  receiverPosture: Standing,Buckled,Lying
+  consent: WFIntimacyOral
+  arousalGain: 4
+  pleasureGain: 5
+  giverShare: 0.35
+  pulseInterval: 1.8
+  invertPleasure: true
+  priority: 22
+
+# Manual: receiver's breasts on giver's penis (paizuri).
+- type: intimacyAct
+  id: WFActPaizuri
+  name: wf-intimacy-act-paizuri
+  kind: Manual
+  giverOrgan: Penis
+  receiverRegion: Chest
+  giverPosture: Standing,Buckled,Lying
+  receiverPosture: Standing,Buckled,Lying
+  consent: WFIntimacyManual
+  arousalGain: 5
+  pleasureGain: 6
+  giverShare: 0.5
+  wetnessGain: 2
+  pulseInterval: 1.6
+  invertPleasure: true
+  priority: 23
+
+# Manual: receiver's thighs on giver's groin (thighjob).
+- type: intimacyAct
+  id: WFActThighjob
+  name: wf-intimacy-act-thighjob
+  kind: Manual
+  giverRegion: Groin
+  receiverRegion: Groin
+  giverPosture: Standing,Buckled,Lying
+  receiverPosture: Standing,Buckled,Lying
+  consent: WFIntimacyManual
+  arousalGain: 4
+  pleasureGain: 4
+  giverShare: 0.5
+  wetnessGain: 2
+  pulseInterval: 1.8
+  invertPleasure: true
+  priority: 24
+
+# Manual: giver fondles receiver's groin.
+- type: intimacyAct
+  id: WFActFondleGroin
+  name: wf-intimacy-act-fondle-groin
+  kind: Manual
+  receiverRegion: Groin
+  giverPosture: Standing,Buckled,Lying
+  receiverPosture: Standing,Buckled,Lying
+  consent: WFIntimacyManual
+  arousalGain: 4
+  pleasureGain: 5
+  giverShare: 0.3
+  wetnessGain: 3
+  pulseInterval: 1.6
+  priority: 25
+
+# Manual: giver fondles receiver's chest.
+- type: intimacyAct
+  id: WFActFondleChest
+  name: wf-intimacy-act-fondle-chest
+  kind: Manual
+  receiverRegion: Chest
+  giverPosture: Standing,Buckled,Lying
+  receiverPosture: Standing,Buckled,Lying
+  consent: WFIntimacyManual
+  arousalGain: 3
+  pleasureGain: 4
+  giverShare: 0.3
+  pulseInterval: 1.8
+  priority: 26
+
+# Manual: giver rubs receiver's groin.
+- type: intimacyAct
+  id: WFActRubGroin
+  name: wf-intimacy-act-rub-groin
+  kind: Manual
+  receiverRegion: Groin
+  giverPosture: Standing,Buckled,Lying
+  receiverPosture: Standing,Buckled,Lying
+  consent: WFIntimacyManual
+  arousalGain: 5
+  pleasureGain: 6
+  giverShare: 0.35
+  wetnessGain: 4
+  pulseInterval: 1.4
+  priority: 27
+
+# Manual: giver caresses receiver's chest.
+- type: intimacyAct
+  id: WFActCaressChest
+  name: wf-intimacy-act-caress-chest
+  kind: Manual
+  receiverRegion: Chest
+  giverPosture: Standing,Buckled,Lying
+  receiverPosture: Standing,Buckled,Lying
+  consent: WFIntimacyManual
+  arousalGain: 3
+  pleasureGain: 4
+  giverShare: 0.3
+  pulseInterval: 2.0
+  priority: 28
+
+# Manual: giver strokes receiver's groin.
+- type: intimacyAct
+  id: WFActStrokeGroin
+  name: wf-intimacy-act-stroke-groin
+  kind: Manual
+  receiverRegion: Groin
+  giverPosture: Standing,Buckled,Lying
+  receiverPosture: Standing,Buckled,Lying
+  consent: WFIntimacyManual
+  arousalGain: 5
+  pleasureGain: 7
+  giverShare: 0.4
+  wetnessGain: 5
+  pulseInterval: 1.3
+  priority: 29

@@ -20,6 +20,7 @@
   requestBurst: 3
   stripConsent: WFUndergarmentStrip   # consent.yml; unset would refuse every undergarment removal by others
   surgeryConsent: WFAnatomySurgery    # consent.yml; unset would refuse every anatomy surgery by others
+  autoArousalConsent: WFAutoArousal   # consent.yml; unset leaves the Anatomy arousal slider fully manual
   # Measured on the south-facing torso sprites against Human, in pixels (+y up). Chest follows the female torso top
   # (first row at least 5 px wide), Groin the male crotch (lowest torso row in the leg gap). Species that share a body
   # share the values. Provisional until each species is checked in the client.

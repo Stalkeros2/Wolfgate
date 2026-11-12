@@ -291,6 +291,36 @@ public sealed partial class GenitalOrganSystem : EntitySystem
         Recompute(body, _genitals.AnatomyEnabled);
     }
 
+    /// <summary>
+    /// Debug only: gives the target the anatomy template of another body, ignoring consent and presence. Used by
+    /// wf.intimacy_debug so an unattended body can act as a test subject.
+    /// </summary>
+    public bool CopyAnatomy(EntityUid source, EntityUid target)
+    {
+        if (TryComp<GenitalsComponent>(target, out var built) && built.OrgansBuilt)
+            return true;
+
+        if (!TryComp<GenitalsComponent>(source, out var sourceGenitals)
+            || sourceGenitals.SourceProfile is not { } template
+            || !TryComp<HumanoidAppearanceComponent>(target, out var humanoid))
+            return false;
+
+        // Re-validated for the target's own age and species, so this cannot smuggle anatomy onto an ineligible body.
+        var config = GenitalProfileValidator.EnsureValid(template, humanoid.Age, humanoid.Species.Id, _proto);
+        if (config.IsEmpty || !EnsureAnatomy(target))
+            return false;
+
+        var genitals = Comp<GenitalsComponent>(target);
+        genitals.SourceProfile = config;
+        ApplyTemplate((target, genitals), config);
+        BuildOrgans(target, config);
+        Recompute(target);
+
+        _adminLog.Add(LogType.WFAnatomy, LogImpact.Low,
+            $"wf.intimacy_debug gave {ToPrettyString(target):entity} the anatomy of {ToPrettyString(source):source}");
+
+        return true;
+    }
     private void Recompute(EntityUid body, bool enabled)
     {
         if (TerminatingOrDeleted(body) || !TryComp<GenitalsComponent>(body, out var comp))

@@ -1,0 +1,20 @@
+# Global intimacy settings, read through WFIntimacySystem.Settings.
+
+- type: intimacySettings
+  id: WFIntimacyDefault
+  maxRange: 1.5
+  sessionIdleSeconds: 20
+  wetnessArousalWeight: 0.5
+  wetnessPleasureWeight: 0.7
+  dryThreshold: 20
+  dryPenalty: 0.55
+  arousalDecayPerSecond: 0.08
+  wetnessDecayPerSecond: 0.12
+  pleasureDecayPerSecond: 4
+  selfLubricationPerSecond: 0.35
+  autoArousalPerSecond: 0.02
+  afterglowSeconds: 30
+  afterglowMultiplier: 0.4
+  orgasmArousalDrop: 40
+  receiveConsent: WFIntimacyReceive   # consent.yml; unset would refuse every act received
+  giveConsent: WFIntimacyGive         # consent.yml; unset would refuse every act started

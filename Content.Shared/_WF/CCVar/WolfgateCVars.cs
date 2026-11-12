@@ -53,6 +53,13 @@ public sealed class WolfgateCVars
         CVarDef.Create("wf.anatomy_enabled", true, CVar.SERVER | CVar.REPLICATED);
 
     /// <summary>
+    /// Logs why the intimacy context menu came up without acts, and lets an unattended body act as a test subject:
+    /// it counts as present, consenting and anatomically built.
+    /// </summary>
+    public static readonly CVarDef<bool> IntimacyDebug =
+        CVarDef.Create("wf.intimacy_debug", false, CVar.SERVER);
+
+    /// <summary>
     /// Version of the adult content notice this client has acknowledged; 0 means never.
     /// </summary>
     public static readonly CVarDef<int> AnatomyNoticeSeen =

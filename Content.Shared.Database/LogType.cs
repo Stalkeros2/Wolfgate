@@ -517,4 +517,9 @@ public enum LogType
     /// <summary>Photos taken, labelled and written on.</summary>
     WFPhoto = 12491,
     // WOLFGATE END
+
+    // WOLFGATE(Intimacy) START: intimate acts and sessions between bodies
+    /// <summary>Intimate acts started, stopped and completed between bodies.</summary>
+    WFIntimacy = 12492,
+    // WOLFGATE END
 }

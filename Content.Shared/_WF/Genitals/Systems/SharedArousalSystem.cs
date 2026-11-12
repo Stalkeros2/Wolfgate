@@ -32,9 +32,10 @@ public sealed partial class SharedArousalSystem : EntitySystem
         return ToState(ent.Comp.Arousal, _genitals.Settings);
     }
 
-    /// <summary>True when a penis or vagina is present. Breasts and testicles have no arousal effect.</summary>
+    /// <summary>True when a penis, vagina or pair of breasts is present. Testicles have no arousal effect.</summary>
     public bool CanBeAroused(Entity<GenitalsComponent?> ent)
     {
-        return Resolve(ent, ref ent.Comp, false) && (ent.Comp.Penis != null || ent.Comp.Vagina != null);
+        return Resolve(ent, ref ent.Comp, false)
+               && (ent.Comp.Penis != null || ent.Comp.Vagina != null || ent.Comp.Breasts != null);
     }
 }

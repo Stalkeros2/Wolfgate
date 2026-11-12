@@ -1,0 +1,43 @@
+# Intimacy consent toggles. All only matter while the Adult content master switch (GenitalMarkings) is on.
+
+- type: consentToggle
+  id: WFAutoArousal
+  name: My arousal builds on its own
+  description: Arousal and lubrication rise slowly by themselves, and the Anatomy arousal slider can then only lower them. Needs Adult content.
+  sortKey: 0-adult-3
+  requires: GenitalMarkings
+
+- type: consentToggle
+  id: WFIntimacyReceive
+  name: Others may start intimate acts with me
+  description: Lets other players who have Adult content on start intimate acts with you while you are next to each other. Needs Adult content.
+  sortKey: 0-adult-4
+  requires: GenitalMarkings
+
+- type: consentToggle
+  id: WFIntimacyGive
+  name: I may start intimate acts with others
+  description: Lets you start intimate acts with other players who allow them. Needs Adult content.
+  sortKey: 0-adult-5
+  requires: GenitalMarkings
+
+- type: consentToggle
+  id: WFIntimacyManual
+  name: "Intimate acts: hands and grinding"
+  description: Allows hands, touching and clothed grinding, as giver or receiver, while the toggles above are on. Needs Adult content.
+  sortKey: 0-adult-6
+  requires: WFIntimacyReceive
+
+- type: consentToggle
+  id: WFIntimacyOral
+  name: "Intimate acts: mouth"
+  description: Allows oral acts, as giver or receiver, while the toggles above are on. Needs Adult content.
+  sortKey: 0-adult-7
+  requires: WFIntimacyReceive
+
+- type: consentToggle
+  id: WFIntimacyPenetrative
+  name: "Intimate acts: penetrative"
+  description: Allows penetrative acts, as giver or receiver, while the toggles above are on. Needs Adult content.
+  sortKey: 0-adult-8
+  requires: WFIntimacyReceive

@@ -26,6 +26,13 @@ public sealed class AnatomySetVisibilityRequestEvent(GenitalSlot slot, GenitalVi
     public readonly GenitalVisibility Visibility = visibility;
 }
 
+/// <summary>Moves the sender's clothing aside over the given regions, or puts it back when the set is empty.</summary>
+[Serializable, NetSerializable]
+public sealed class AnatomySetDisplacementRequestEvent(GenitalRegion regions) : EntityEventArgs
+{
+    public readonly GenitalRegion Regions = regions;
+}
+
 /// <summary>Removes (worn = false) or puts back (worn = true) one of the sender's undergarments.</summary>
 [Serializable, NetSerializable]
 public sealed class AnatomySetUndergarmentRequestEvent(UndergarmentSlot slot, bool worn) : EntityEventArgs

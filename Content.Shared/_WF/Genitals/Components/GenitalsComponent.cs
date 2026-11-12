@@ -45,6 +45,10 @@ public sealed partial class GenitalsComponent : Component
     [DataField, AutoNetworkedField]
     public UndergarmentFlags Undergarments;
 
+    /// <summary>Regions whose clothing has been moved aside rather than removed; the garments stay worn.</summary>
+    [DataField, AutoNetworkedField]
+    public GenitalRegion Displaced;
+
     /// <summary>Others cannot start removing an undergarment before this time.</summary>
     [DataField(customTypeSerializer: typeof(TimeOffsetSerializer)), AutoNetworkedField, AutoPausedField]
     public TimeSpan StripCooldownUntil;

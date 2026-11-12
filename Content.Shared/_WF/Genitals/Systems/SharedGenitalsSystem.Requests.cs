@@ -23,6 +23,7 @@ public abstract partial class SharedGenitalsSystem
         SubscribeAllEvent<AnatomySetRevealModeRequestEvent>(OnSetRevealMode);
         SubscribeAllEvent<AnatomySetVisibilityRequestEvent>(OnSetVisibility);
         SubscribeAllEvent<AnatomySetUndergarmentRequestEvent>(OnSetUndergarment);
+        SubscribeAllEvent<AnatomySetDisplacementRequestEvent>(OnSetDisplacement);
     }
 
     /// <summary>Rate-limit slot for requests that apply to the whole body.</summary>
@@ -64,11 +65,20 @@ public abstract partial class SharedGenitalsSystem
             SetOwnArousal(session, value);
     }
 
-    /// <summary>Sets the sender's own arousal (TryGetOwnBody), clamped to 0..100; refused while dead or with nothing arousable.</summary>
+    /// <summary>
+    /// Sets the sender's own arousal (TryGetOwnBody), clamped to 0..100; refused while dead or with nothing arousable.
+    /// With the auto-arousal toggle on, the panel may only lower it: building arousal is the interactions' job.
+    /// </summary>
     protected void SetOwnArousal(ICommonSession session, byte value)
     {
-        if (TryGetOwnBody(session, out var ent))
-            _arousal.SetArousal(ent, Math.Min(value, SharedArousalSystem.MaxArousal));
+        if (!TryGetOwnBody(session, out var ent))
+            return;
+
+        var capped = Math.Min(value, SharedArousalSystem.MaxArousal);
+        if (Settings.AutoArousalConsent is { } autoArousal && _consent.HasStrictConsent(ent.Owner, autoArousal))
+            capped = Math.Min(capped, ent.Comp.Arousal);
+
+        _arousal.SetArousal(ent, capped);
     }
 
     private void OnSetRevealMode(AnatomySetRevealModeRequestEvent ev, EntitySessionEventArgs args)
@@ -148,6 +158,22 @@ public abstract partial class SharedGenitalsSystem
                 LogImpact.Low,
                 $"{ToPrettyString(ent.Owner):player} removed their {slotName} undergarment");
         }
+    }
+
+    /// <summary>Moves the sender's clothing aside over the given regions, or puts it back when the set is empty.</summary>
+    private void OnSetDisplacement(AnatomySetDisplacementRequestEvent ev, EntitySessionEventArgs args)
+    {
+        if ((ev.Regions & ~GenitalRegion.All) != 0
+            || !TryGetOwnGenitals(args.SenderSession, typeof(AnatomySetDisplacementRequestEvent), NoRequestSlot, out var ent))
+            return;
+
+        var displaced = ev.Regions & GenitalRegion.All;
+        if (ent.Comp.Displaced == displaced)
+            return;
+
+        ent.Comp.Displaced = displaced;
+        DirtyField(ent.Owner, ent.Comp, nameof(GenitalsComponent.Displaced));
+        RaiseAnatomyVisualsChanged(ent.Owner);
     }
 
     /// <summary>Lets a predicting client refresh the sprite and the panel at once.</summary>
