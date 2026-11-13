@@ -38,6 +38,7 @@ Design notes: `Docs/_WF/ShipMissiles/design.md`.
 ### Server
 
 - [`Content.Server/_WF/ShipMissiles/TargetDescriptorCapture.cs`](TargetDescriptorCapture.cs)
+- [`Content.Server/_WF/ShipMissiles/WFLockOnMissileIndicatorSystem.cs`](WFLockOnMissileIndicatorSystem.cs)
 - [`Content.Server/_WF/ShipMissiles/WFMissileFlightComponent.cs`](WFMissileFlightComponent.cs)
 - [`Content.Server/_WF/ShipMissiles/WFMissileFlightSystem.cs`](WFMissileFlightSystem.cs)
 - [`Content.Server/_WF/ShipMissiles/WFMissileFlightSystem.Launch.cs`](WFMissileFlightSystem.Launch.cs)

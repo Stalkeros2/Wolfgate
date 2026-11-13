@@ -29,6 +29,31 @@ public sealed partial class WFLockOnComponent : Component
     [AutoNetworkedField, ViewVariables]
     public float AimTime;
 
+    [AutoNetworkedField]
+
+    public Vector2 MissileBearing;          // map-space unit vector
+
+    [AutoNetworkedField]
+    public Vector2 MissileMuzzle;           // world position of best launcher
+
+    [AutoNetworkedField]
+    public float MissileDivertCost;         // m/s
+
+    [AutoNetworkedField]
+    public float MissileDivertBudget;       // m/s
+
+    [AutoNetworkedField]
+    public float MissileQuality;            // 0..1
+
+    [AutoNetworkedField]
+    public bool MissileInEnvelope;
+
+    [AutoNetworkedField]
+    public bool MissileHasSolution;
+
+    [AutoNetworkedField]
+    public float MissileRange;              // intercept distance, m
+
     /// <summary>Furthest distance from the ship's centre at which a lock is held, in metres.</summary>
     [DataField]
     public float MaxRange = 2560f;

@@ -86,7 +86,7 @@ public sealed class WFLockOnOverlay : Control
             handle.DrawString(_font, new Vector2(8, 8), Loc.GetString("wf-lockon-status", ("target", meta.EntityName)), LockColor);
 
         RefreshGuns();
-        if (_guns.Count == 0)
+        if (_guns.Count == 0 && !lockOn.MissileHasSolution)
             return;
 
         _leads.Clear();
@@ -125,6 +125,33 @@ public sealed class WFLockOnOverlay : Control
                     ("speed", $"{speed:0}"),
                     ("lead", $"{(lead.Point - targetWorld).Length():0}")), LeadColor);
             }
+        }
+        if (lockOn.MissileHasSolution)
+        {
+            var missileLeadView = Vector2.Transform(
+        lockOn.AimTime > 0f
+            ? lockOn.AimPoint + lockOn.AimVelocity * Extrapolation(lockOn)
+            : targetWorld,
+        worldToView);
+
+            var color = lockOn.MissileQuality >= 0.75f ? Color.FromHex("#40e040")
+              : lockOn.MissileQuality >= 0.4f  ? Color.FromHex("#e0e040")
+                                               : Color.FromHex("#e04040");
+
+            DrawQualityRing(handle, missileLeadView, lockOn.MissileQuality, color);
+
+            if (!lockOn.MissileInEnvelope)
+                handle.DrawString(_font, missileLeadView + new Vector2(8, 8),
+            Loc.GetString("wf-lockon-missile-out-of-envelope"), color);
+
+            if (_config.GetCVar(WFLockOnCVars.DebugLead))
+                handle.DrawString(_font, missileLeadView + new Vector2(8, -14),
+            Loc.GetString("wf-lockon-missile-debug",
+                ("cost",   $"{lockOn.MissileDivertCost:0}"),
+                ("budget", $"{lockOn.MissileDivertBudget:0}"),
+                ("qual",   $"{lockOn.MissileQuality * 100f:0}%"),
+                ("range",  $"{lockOn.MissileRange:0}")),
+            color);
         }
     }
 
@@ -208,5 +235,23 @@ public sealed class WFLockOnOverlay : Control
         handle.DrawLine(new Vector2(right, bottom), new Vector2(right - BracketArm, bottom), LockColor);
         handle.DrawLine(new Vector2(right, bottom), new Vector2(right, bottom - BracketArm), LockColor);
         handle.DrawCircle(point, 2f, LockColor);
+    }
+
+    private static void DrawQualityRing(DrawingHandleScreen handle, Vector2 center, float quality, Color color)
+    {
+        const float radius = 10f;
+        // full grey ring first, then a filled arc showing quality
+        handle.DrawCircle(center, radius, Color.FromHex("#333333"), false);
+        var start = -MathF.PI / 2f;                          // top
+        var end = start + quality * MathF.Tau;             // clockwise
+        const int steps = 20;
+        var prev = center + new Vector2(MathF.Cos(start), MathF.Sin(start)) * radius;
+        for (var i = 1; i <= steps; i++)
+        {
+            var t = start + (end - start) * i / steps;
+            var next = center + new Vector2(MathF.Cos(t), MathF.Sin(t)) * radius;
+            handle.DrawLine(prev, next, color);
+            prev = next;
+        }
     }
 }
