@@ -101,7 +101,7 @@ public sealed class WFLockOnOverlay : Control
             // A shot leaves with the turn of the grid it is mounted on, as GunSystem computes it.
             var mount = weaponXform.GridUid ?? ship;
             var muzzle = _transform.GetWorldPosition(weaponXform);
-            var muzzleVelocity = _physics.GetMapLinearVelocity(weapon) - _physics.GetMapLinearVelocity(mount);
+            var muzzleVelocity = _physics.GetMapLinearVelocity(weapon);
 
             var lead = WFLockOnMath.Solve(muzzle, targetWorld, lockOn.AimVelocity - muzzleVelocity, speed);
             if (!lead.Valid)
