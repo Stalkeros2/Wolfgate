@@ -152,6 +152,27 @@ public sealed class WFLockOnOverlay : Control
                 ("qual",   $"{lockOn.MissileQuality * 100f:0}%"),
                 ("range",  $"{lockOn.MissileRange:0}")),
             color);
+
+            // Ideal launch sector: an RWR-style arc on a fixed ring around the ship,
+            // centered on the ideal bearing with angular width = leeway.
+            // Purely a visual hint — players are never locked out, firing outside the band is allowed.
+            var muzzleView = Vector2.Transform(lockOn.MissileMuzzle, worldToView);
+            var leeway = ComputeLeeway(lockOn.MissileRange, lockOn.MissileQuality);
+
+            // worldToView's linear part is Rotation(-shipRotation) * Scale(s, -s), so M21/M11 gives
+            // the view rotation that converts map-space bearings into view-space ones.
+            var viewRot = MathF.Atan2(worldToView.M21, worldToView.M11);
+            var viewBearing = Rotate(lockOn.MissileBearing, viewRot);
+
+            var prev = muzzleView + Rotate(viewBearing, -leeway) * SectorRadiusPx;
+            for (var i = 1; i <= SectorArcSteps; i++)
+            {
+                var t = -leeway + (2f * leeway) * i / SectorArcSteps;
+                var dir = Rotate(viewBearing, t);
+                var next = muzzleView + dir * SectorRadiusPx;
+                handle.DrawLine(prev, next, color.WithAlpha(0.7f));
+                prev = next;
+            }
         }
     }
 
@@ -160,6 +181,30 @@ public sealed class WFLockOnOverlay : Control
     {
         var elapsed = (float) _timing.CurTime.TotalSeconds - lockOn.AimTime;
         return Math.Clamp(elapsed, 0f, MaxExtrapolation);
+    }
+
+    private const float SectorRadiusPx = 120f;
+    private const float SectorMinLeewayDeg = 15f;
+    private const float SectorMaxLeewayDeg = 60f;
+    private const float SectorMinRangeM = 200f;
+    private const float SectorMaxRangeM = 2000f;
+    private const int SectorArcSteps = 16;
+
+    /// <summary>Radians of acceptable launch leeway either side of the ideal bearing.
+    /// Widens with range (more flight time to correct) and quality (more divert budget).</summary>
+    private float ComputeLeeway(float rangeM, float quality)
+    {
+        var t = Math.Clamp((rangeM - SectorMinRangeM) / (SectorMaxRangeM - SectorMinRangeM), 0f, 1f);
+        var leewayDeg = SectorMinLeewayDeg + t * (SectorMaxLeewayDeg - SectorMinLeewayDeg);
+        return leewayDeg * MathF.PI / 180f * quality;
+    }
+
+    /// <summary>Rotates a vector by radians.</summary>
+    private static Vector2 Rotate(Vector2 v, float radians)
+    {
+        var cos = MathF.Cos(radians);
+        var sin = MathF.Sin(radians);
+        return new Vector2(v.X * cos - v.Y * sin, v.X * sin + v.Y * cos);
     }
 
     /// <summary>Rebuilds the gun list when the selection changes; gun speeds come from the networked component.</summary>

@@ -58,6 +58,7 @@ public sealed class WFLockOnMissileIndicatorSystem : EntitySystem
         {
             if (gunType.Type != ShipGunType.Missile || gunXform.GridUid != ship) continue;
             if (!_gun.TryNextShootPrototype((gunUid, gun), out var proto)) continue;
+            proto = _gun.GetBulletPrototype(proto);
             if (!proto.TryComp<WFMissileFlightComponent>(out var m, Factory)) continue;
 
             var muzzle = _transform.GetWorldPosition(gunXform);

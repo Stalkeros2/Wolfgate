@@ -5,3 +5,5 @@ wf-lockon-status = LOCK: { $target }
 wf-lockon-alert = { $ship } has a firing solution on this vessel.
 wf-lockon-alert-sender = Tactical
 wf-lockon-debug = T { $time }s  Vt { $target }  Vg { $muzzle }  S { $speed }  L { $lead }m
+wf-lockon-missile-out-of-envelope = MISSILE OUT OF ENVELOPE
+wf-lockon-missile-debug = cost { $cost }  budget { $budget }  qual { $qual }  range { $range }m
