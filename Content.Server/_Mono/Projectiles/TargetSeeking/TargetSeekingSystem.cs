@@ -12,11 +12,11 @@ using Content.Shared.Interaction;
 using Content.Shared.Projectiles;
 using Robust.Server.GameObjects;
 using Robust.Shared.Physics.Components;
-using Robust.Shared.Physics.Systems;
+using Robust.Shared.Physics.Systems; // WOLFGATE(ShipMissiles)
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
-using Content.Server._WF.ShipMissiles;
-using Content.Shared._WF.ShipMissiles;
+using Content.Server._WF.ShipMissiles; // WOLFGATE(ShipMissiles)
+using Content.Shared._WF.ShipMissiles; // WOLFGATE(ShipMissiles)
 
 namespace Content.Server._Mono.Projectiles.TargetSeeking;
 
@@ -228,7 +228,6 @@ public sealed partial class TargetSeekingSystem : EntitySystem
         var sourcePos = _transform.GetWorldPosition(transform);
         var currentRotation = _transform.GetWorldRotation(transform);
 
-        // WOLFGATE(ShipMissiles) START: descriptor-aware acquisition for smart missiles
         TryComp<WFMissileFlightComponent>(uid, out var wfFlight);
         var descriptorSeeking = wfFlight is { DescriptorSeeking: true, DescriptorCaptured: true };
         var bestCost = float.MaxValue;
@@ -313,16 +312,15 @@ public sealed partial class TargetSeekingSystem : EntitySystem
             }
         }
 
-
+        // WOLFGATE(ShipMissiles) START: fallback capture when fire-time didn't get one
         // Set our new target
         if (bestTarget.HasValue)
         {
             SetSeekerTarget((uid, component), bestTarget, transform);
-            // WOLFGATE(ShipMissiles) START: fallback capture when fire-time didn't get one
             if (wfFlight is { DescriptorSeeking: true, DescriptorCaptured: false })
                 TargetDescriptorCapture.FromEntity(EntityManager, _physics, _transform, wfFlight, bestTarget.Value);
-            // WOLFGATE END
         }
+        // WOLFGATE END
     }
 
     /// <summary>
