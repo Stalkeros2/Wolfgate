@@ -58,6 +58,9 @@ public sealed partial class WFLockOnComponent : Component
     [DataField]
     public float MaxRange = 2560f;
 
+    [ViewVariables, DataField]
+    public float MissileSpeed; // m/s, set from the missile's prototype / gun component on the server
+
     /// <summary>The click in the target's own frame, so the aim point rides a moving, turning hull.</summary>
     [ViewVariables]
     public Vector2 TargetLocalPoint;

@@ -128,48 +128,58 @@ public sealed class WFLockOnOverlay : Control
         }
         if (lockOn.MissileHasSolution)
         {
-            var missileLeadView = Vector2.Transform(
-        lockOn.AimTime > 0f
-            ? lockOn.AimPoint + lockOn.AimVelocity * Extrapolation(lockOn)
-            : targetWorld,
-        worldToView);
+            // Ideal launch vector: account for own-ship and target motion so the
+            // sector points at the intercept, not at the target's current position.
+            //
+            // The missile leaves the rail carrying the ship's velocity and adds its
+            // own speed along the launch direction; the target keeps moving. Solve
+            // for the intercept using the effective closing speed (so a fleeing
+            // target lengthens the flight time, a charging one shortens it), drift
+            // both ends forward by that flight time, then aim at where they meet.
+            // One iteration is enough for sub-second intercepts.
+            var shipVel = _physics.GetMapLinearVelocity(ship); // console grid == launching grid in normal play
+            var missileSpeed = lockOn.MissileSpeed > 0f ? lockOn.MissileSpeed : 400f;
+
+            var toTarget = targetWorld - lockOn.MissileMuzzle;
+            var range = toTarget.Length();
+            var dirToTarget = range > 1e-3f ? toTarget / range : Vector2.UnitX;
+
+            var relVel = lockOn.AimVelocity - shipVel;
+            var closingSpeed = MathF.Max(missileSpeed - Vector2.Dot(relVel, dirToTarget), 1f);
+            var timeOfFlight = range / closingSpeed;
+
+            var leadWorld = targetWorld + relVel * timeOfFlight;
+            var leadBearing = leadWorld - lockOn.MissileMuzzle;
+            if (leadBearing.LengthSquared() < 1e-6f)
+                leadBearing = dirToTarget;
+            leadBearing = leadBearing.Normalized();
+
+            var missileLeadView = Vector2.Transform(leadWorld, worldToView);
 
             var color = lockOn.MissileQuality >= 0.75f ? Color.FromHex("#40e040")
-              : lockOn.MissileQuality >= 0.4f  ? Color.FromHex("#e0e040")
+              : lockOn.MissileQuality >= 0.4f ? Color.FromHex("#e0e040")
                                                : Color.FromHex("#e04040");
 
             DrawQualityRing(handle, missileLeadView, lockOn.MissileQuality, color);
 
             if (!lockOn.MissileInEnvelope)
                 handle.DrawString(_font, missileLeadView + new Vector2(8, 8),
-            Loc.GetString("wf-lockon-missile-out-of-envelope"), color);
+                Loc.GetString("wf-lockon-missile-out-of-envelope"), color);
 
             if (_config.GetCVar(WFLockOnCVars.DebugLead))
-                handle.DrawString(_font, missileLeadView + new Vector2(8, -14),
-            Loc.GetString("wf-lockon-missile-debug",
-                ("cost",   $"{lockOn.MissileDivertCost:0}"),
-                ("budget", $"{lockOn.MissileDivertBudget:0}"),
-                ("qual",   $"{lockOn.MissileQuality * 100f:0}%"),
-                ("range",  $"{lockOn.MissileRange:0}")),
-            color);
+                handle.DrawString(_font, missileLeadView + new Vector2(8, -14), Loc.GetString("wf-lockon-missile-debug", ("cost", $"{lockOn.MissileDivertCost:0}"), ("budget", $"{lockOn.MissileDivertBudget:0}"), ("qual", $"{lockOn.MissileQuality * 100f:0}%"), ("range", $"{lockOn.MissileRange:0}")), color);
 
-            // Ideal launch sector: an RWR-style arc on a fixed ring around the ship,
-            // centered on the ideal bearing with angular width = leeway.
-            // Purely a visual hint — players are never locked out, firing outside the band is allowed.
-            var muzzleView = Vector2.Transform(lockOn.MissileMuzzle, worldToView);
+            // Sector centered on the LEAD bearing, built in world space so that
+            // worldToView applies the Y-flip, ship rotation and radar zoom together.
             var leeway = ComputeLeeway(lockOn.MissileRange, lockOn.MissileQuality);
 
-            // worldToView's linear part is Rotation(-shipRotation) * Scale(s, -s), so M21/M11 gives
-            // the view rotation that converts map-space bearings into view-space ones.
-            var viewRot = MathF.Atan2(worldToView.M21, worldToView.M11);
-            var viewBearing = Rotate(lockOn.MissileBearing, viewRot);
-
-            var prev = muzzleView + Rotate(viewBearing, -leeway) * SectorRadiusPx;
+            var prev = Vector2.Transform(lockOn.MissileMuzzle + Rotate(leadBearing, -leeway) * SectorRadiusPx, worldToView);
             for (var i = 1; i <= SectorArcSteps; i++)
             {
                 var t = -leeway + (2f * leeway) * i / SectorArcSteps;
-                var dir = Rotate(viewBearing, t);
-                var next = muzzleView + dir * SectorRadiusPx;
+                var next = Vector2.Transform(
+                    lockOn.MissileMuzzle + Rotate(leadBearing, t) * SectorRadiusPx,
+                    worldToView);
                 handle.DrawLine(prev, next, color.WithAlpha(0.7f));
                 prev = next;
             }
@@ -179,11 +189,11 @@ public sealed class WFLockOnOverlay : Control
     /// <summary>Seconds since the server measured the aim point, capped so a stale lock never runs away.</summary>
     private float Extrapolation(WFLockOnComponent lockOn)
     {
-        var elapsed = (float) _timing.CurTime.TotalSeconds - lockOn.AimTime;
+        var elapsed = (float)_timing.CurTime.TotalSeconds - lockOn.AimTime;
         return Math.Clamp(elapsed, 0f, MaxExtrapolation);
     }
 
-    private const float SectorRadiusPx = 120f;
+    private const float SectorRadiusPx = 25f;
     private const float SectorMinLeewayDeg = 15f;
     private const float SectorMaxLeewayDeg = 60f;
     private const float SectorMinRangeM = 200f;
