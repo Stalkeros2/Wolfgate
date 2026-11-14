@@ -1,5 +1,6 @@
 using Content.Server._Mono.Projectiles.TargetGuided;
 using Content.Server._Mono.Projectiles.TargetSeeking;
+using Content.Server._WF.BoardingAction;
 using Content.Server._WF.ShipMissiles;
 using Content.Shared._WF.LockOn;
 using Content.Shared.Weapons.Ranged.Events;
@@ -10,6 +11,7 @@ namespace Content.Server._WF.LockOn;
 public sealed partial class WFLockOnSystem
 {
     [Dependency] private TargetSeekingSystem _targetSeeking = default!;
+    [Dependency] private WFHackHarpoonSystem _wfHack = default!; // WOLFGATE(BoardingAction)
 
     /// <summary>How long one fire command keeps applying the ship's lock to that weapon's projectiles.</summary>
     public static readonly TimeSpan ShotLifetime = TimeSpan.FromSeconds(2);
@@ -53,11 +55,26 @@ public sealed partial class WFLockOnSystem
             targetXform.MapID == MapId.Nullspace)
             return;
 
+        // Coordinate-guidance fields use the current locked hull point from AimPoint when the server
+        // has refreshed it (AimTime > 0); otherwise fall back to the target's live map position.
+        // The target entity is always preserved for entity-based seeking (SetSeekerTarget).
         var targetMap = targetXform.MapPosition;
         var targetCoords = _transform.ToCoordinates(targetMap);
+        if (Transform(weapon).GridUid is { } ship &&
+            TryComp<WFLockOnComponent>(ship, out var lockOn) &&
+            lockOn.AimTime > 0f)
+        {
+            targetMap = new MapCoordinates(lockOn.AimPoint, targetXform.MapID);
+            targetCoords = _transform.ToCoordinates(targetMap);
+        }
+
         foreach (var projectile in args.FiredProjectiles)
         {
             if (TerminatingOrDeleted(projectile))
+                continue;
+
+            // Refused projectiles skip all guidance assignments.
+            if (_wfHack.RefusesGuidance(projectile, targetCoords))
                 continue;
 
             if (TryComp<TargetSeekingComponent>(projectile, out var seeker))
@@ -77,9 +94,14 @@ public sealed partial class WFLockOnSystem
         if (Transform(console).GridUid is not { } grid ||
             !TryComp<WFLockOnComponent>(grid, out var lockOn) ||
             lockOn.Target is not { } target ||
-            TerminatingOrDeleted(target) ||
-            !TryComp<TransformComponent>(target, out var targetXform))
+            TerminatingOrDeleted(target))
             return null;
+
+        if (!TryComp<TransformComponent>(target, out var targetXform))
+            return null;
+
+        if (lockOn.AimTime > 0f)
+            return _transform.ToCoordinates(new MapCoordinates(lockOn.AimPoint, targetXform.MapID));
 
         return _transform.ToCoordinates(targetXform.MapPosition);
     }

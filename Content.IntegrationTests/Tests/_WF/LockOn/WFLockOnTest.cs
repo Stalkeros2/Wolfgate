@@ -6,6 +6,7 @@ using Content.Server._Mono.Projectiles.TargetSeeking;
 using Content.Server._WF.LockOn;
 using Content.Server._WF.ShipMissiles;
 using Content.Shared._WF.LockOn;
+using Content.Shared.Weapons.Ranged.Components;
 using Content.Shared.Weapons.Ranged.Events;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
@@ -121,6 +122,10 @@ public sealed class WFLockOnTest
             Assert.That(lockOn.RequestLock(console, console, Net(em, xform, map.MapId, point)), Is.True);
 
             var gun = em.SpawnEntity(null, map.GridCoords);
+            em.AddComponent<GunComponent>(gun);
+            var gunXform = em.GetComponent<TransformComponent>(gun);
+            var gunComp = em.GetComponent<GunComponent>(gun);
+            gunComp.ShootCoordinates = gunXform.Coordinates;
             var shot = em.AddComponent<WFLockOnShotComponent>(gun);
             shot.Target = other;
 

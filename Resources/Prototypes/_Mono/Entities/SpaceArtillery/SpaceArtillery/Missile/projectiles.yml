@@ -625,6 +625,7 @@
     energyConsumption: 2900000
     disableDuration: 7
 
+# WOLFGATE(ShipMissiles) START: smart-variant missile prototypes; descriptor-based acquisition for the reliable tier.
 # Smart variants: descriptor-based acquisition for the reliable tier.
 
 - type: entity
@@ -671,3 +672,4 @@
   components:
   - type: WFMissileFlight
     descriptorSeeking: true
+# WOLFGATE END

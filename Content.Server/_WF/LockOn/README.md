@@ -77,7 +77,9 @@ Tuning lives on `WFLockOnComponent.MaxRange` (2560 m by default; a held lock cle
 - [`Content.Client/_Mono/FireControl/UI/FireControlConsoleBoundUserInterface.cs`](../../../Content.Client/_Mono/FireControl/UI/FireControlConsoleBoundUserInterface.cs)
   - the lock overlay and its middle-click input.
   - lock clicks and the shared lock overlay on the gunnery radar.
+- [`Content.Client/_Mono/FireControl/UI/FireControlNavControl.cs`](../../../Content.Client/_Mono/FireControl/UI/FireControlNavControl.cs): route throttled cursor moves to a separate event so they cannot trigger lock requests.
 - [`Content.Client/Shuttles/BUI/ShuttleConsoleBoundUserInterface.cs`](../../../Content.Client/Shuttles/BUI/ShuttleConsoleBoundUserInterface.cs): lock clicks and the shared lock overlay on the helm radar.
+- [`Content.Client/Shuttles/UI/ShuttleNavControl.xaml.cs`](../../../Content.Client/Shuttles/UI/ShuttleNavControl.xaml.cs): separate cursor-move event so throttled radar moves cannot trigger lock requests.
 - [`Content.Server/_Mono/FireControl/FireControlSystem.Console.cs`](../../_Mono/FireControl/FireControlSystem.Console.cs): hand the ship's lock to the weapons this command fires.
 - [`Content.Server/_Mono/FireControl/FireControlSystem.TargetGuided.cs`](../../_Mono/FireControl/FireControlSystem.TargetGuided.cs)
   - a missile fired under the ship's lock seeks that target.

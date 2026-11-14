@@ -84,10 +84,16 @@ public sealed partial class WFLockOnSystem : EntitySystem
         if (!_ui.IsUiOpen(uid, key, actor))
             return false;
 
+        // The blocker gates both the normal reach check and the cockpit exception, so a blocked
+        // actor cannot change or clear the ship-wide lock even from a cockpit seat.
+        if (!_blocker.CanInteract(actor, uid))
+            return false;
+
         if (CanReach(uid, key, actor))
             return true;
 
         // A cockpit pilot is buckled into a seat on the same hull, away from the console itself.
+        // This bypasses only distance, not the blocker above.
         return TryComp<BuckleComponent>(actor, out var buckle) && buckle.Buckled &&
                Transform(actor).GridUid is { } grid &&
                Transform(uid).GridUid == grid;
@@ -95,9 +101,8 @@ public sealed partial class WFLockOnSystem : EntitySystem
 
     /// <summary>The gunnery UI skips engine input validation, so requests recheck interaction and range as the engine would.</summary>
     private bool CanReach(EntityUid uid, Enum key, EntityUid actor) =>
-        _blocker.CanInteract(actor, uid) &&
-        (HasComp<IgnoreUIRangeComponent>(actor) ||
-         _interaction.InRangeAndAccessible(actor, uid, _ui.GetUiRange(uid, key)));
+        HasComp<IgnoreUIRangeComponent>(actor) ||
+        _interaction.InRangeAndAccessible(actor, uid, _ui.GetUiRange(uid, key));
 
     /// <summary>Locks the target under a click, or clears the lock when the click found nothing.</summary>
     public bool RequestLock(EntityUid console, EntityUid actor, NetCoordinates coordinates)

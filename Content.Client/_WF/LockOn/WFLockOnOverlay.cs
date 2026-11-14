@@ -45,6 +45,7 @@ public sealed class WFLockOnOverlay : Control
     private readonly List<(EntityUid Weapon, float Speed)> _guns = new();
     private readonly List<NetEntity> _selection = new();
     private readonly List<Vector2> _leads = new();
+    private bool _wgGunsUnresolved;
 
     public WFLockOnOverlay(EntityUid console, ShuttleNavControl radar, Func<IReadOnlyList<NetEntity>> weapons)
     {
@@ -68,17 +69,23 @@ public sealed class WFLockOnOverlay : Control
             !_entities.TryGetComponent(ship, out WFLockOnComponent? lockOn) ||
             lockOn.Target is not { } target ||
             !_entities.EntityExists(target) ||
-            !_entities.TryGetComponent(target, out TransformComponent? targetXform) ||
-            targetXform.MapID == MapId.Nullspace ||
-            !_radar.WfLockOnTryGetWorldToView(out var worldToView, out var map) ||
-            map != targetXform.MapID)
+            !_radar.WfLockOnTryGetWorldToView(out var worldToView, out var map))
+            return;
+
+        TransformComponent? targetXform = null;
+        _entities.TryGetComponent(target, out targetXform);
+        if (targetXform != null && targetXform.MapID == MapId.Nullspace)
+            return;
+        if (targetXform != null && map != targetXform.MapID)
             return;
 
         // The server measures the clicked hull point; extrapolating it from the last measurement keeps the cross
         // smooth between refreshes without trusting the client's physics for someone else's grid.
         var targetWorld = lockOn.AimTime > 0f
             ? lockOn.AimPoint + lockOn.AimVelocity * Extrapolation(lockOn)
-            : _transform.GetWorldPosition(targetXform);
+            : targetXform is { } txf ? _transform.GetWorldPosition(txf) : default;
+        if (lockOn.AimTime <= 0f && targetXform == null)
+            return;
         var targetView = Vector2.Transform(targetWorld, worldToView);
         DrawBracket(handle, targetView);
 
@@ -95,7 +102,7 @@ public sealed class WFLockOnOverlay : Control
         foreach (var (weapon, speed) in _guns)
         {
             if (!_entities.TryGetComponent(weapon, out TransformComponent? weaponXform) ||
-                weaponXform.MapID != targetXform.MapID)
+                weaponXform.MapID != map)
                 continue;
 
             // A shot leaves with the turn of the grid it is mounted on, as GunSystem computes it.
@@ -128,30 +135,17 @@ public sealed class WFLockOnOverlay : Control
         }
         if (lockOn.MissileHasSolution)
         {
-            // Ideal launch vector: account for own-ship and target motion so the
-            // sector points at the intercept, not at the target's current position.
-            //
-            // The missile leaves the rail carrying the ship's velocity and adds its
-            // own speed along the launch direction; the target keeps moving. Solve
-            // for the intercept using the effective closing speed (so a fleeing
-            // target lengthens the flight time, a charging one shortens it), drift
-            // both ends forward by that flight time, then aim at where they meet.
-            // One iteration is enough for sub-second intercepts.
             var shipVel = _physics.GetMapLinearVelocity(ship); // console grid == launching grid in normal play
-            var missileSpeed = lockOn.MissileSpeed > 0f ? lockOn.MissileSpeed : 400f;
-
-            var toTarget = targetWorld - lockOn.MissileMuzzle;
-            var range = toTarget.Length();
-            var dirToTarget = range > 1e-3f ? toTarget / range : Vector2.UnitX;
-
             var relVel = lockOn.AimVelocity - shipVel;
-            var closingSpeed = MathF.Max(missileSpeed - Vector2.Dot(relVel, dirToTarget), 1f);
-            var timeOfFlight = range / closingSpeed;
-
-            var leadWorld = targetWorld + relVel * timeOfFlight;
+            var lead = WFLockOnMath.Solve(lockOn.MissileMuzzle, targetWorld, relVel, lockOn.MissileSpeed);
+            var leadWorld = lead.Valid ? lead.Point : targetWorld;
             var leadBearing = leadWorld - lockOn.MissileMuzzle;
             if (leadBearing.LengthSquared() < 1e-6f)
-                leadBearing = dirToTarget;
+            {
+                var toTarget = targetWorld - lockOn.MissileMuzzle;
+                var range = toTarget.Length();
+                leadBearing = range > 1e-3f ? toTarget / range : Vector2.UnitX;
+            }
             leadBearing = leadBearing.Normalized();
 
             var missileLeadView = Vector2.Transform(leadWorld, worldToView);
@@ -221,9 +215,10 @@ public sealed class WFLockOnOverlay : Control
     private void RefreshGuns()
     {
         var weapons = Weapons();
-        if (SameSelection(weapons))
+        if (!_wgGunsUnresolved && SameSelection(weapons))
             return;
 
+        _wgGunsUnresolved = false;
         _selection.Clear();
         _guns.Clear();
         for (var i = 0; i < weapons.Count && i < MaxGuns; i++)
@@ -232,8 +227,13 @@ public sealed class WFLockOnOverlay : Control
             _selection.Add(net);
             if (!_entities.TryGetEntity(net, out var entity) ||
                 !_entities.TryGetComponent(entity.Value, out GunComponent? gun) ||
-                !_entities.TryGetComponent(entity.Value, out ShipGunTypeComponent? type) ||
-                type.Type == ShipGunType.Missile)
+                !_entities.TryGetComponent(entity.Value, out ShipGunTypeComponent? type))
+            {
+                _wgGunsUnresolved = true;
+                continue;
+            }
+
+            if (type.Type == ShipGunType.Missile)
                 continue;
 
             var speed = _entities.HasComponent<HitscanBatteryAmmoProviderComponent>(entity.Value)

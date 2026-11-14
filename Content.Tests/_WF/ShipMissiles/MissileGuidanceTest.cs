@@ -169,6 +169,15 @@ public sealed class MissileGuidanceTest
             // Speed 100 vs 10: delta 90 > tolerance 40, so it must be rejected.
             Assert.That(MissileGuidance.DescriptorMatch(new Vector2(100f, 0f), 50f, vel, 50f, 0.5f, 40f, 45f),
                 Is.EqualTo(float.MaxValue), "Too fast is rejected.");
+
+            // Same velocity, radius within tolerance: accepted with positive score.
+            var score55 = MissileGuidance.DescriptorMatch(vel, 55f, vel, 50f, 0.5f, 40f, 45f);
+            Assert.That(score55, Is.Positive, "Candidate within size tolerance is accepted.");
+
+            // Larger radius difference gives a higher (worse) score but still accepted.
+            var score65 = MissileGuidance.DescriptorMatch(vel, 65f, vel, 50f, 0.5f, 40f, 45f);
+            Assert.That(score65, Is.Positive, "Candidate at size tolerance edge is accepted.");
+            Assert.That(score55, Is.LessThan(score65), "Closer radius match scores lower.");
         });
     }
 }

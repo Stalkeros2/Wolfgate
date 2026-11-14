@@ -89,19 +89,6 @@ public sealed partial class FireControlSystem
             }
         }
 
-        // WOLFGATE(ShipMissiles) START: tell a soft-launched missile where the console aimed, before its seeker locks
-        foreach (var projectileUid in args.FiredProjectiles)
-        {
-            if (TryComp<Content.Server._WF.ShipMissiles.WFMissileFlightComponent>(projectileUid, out var wfMissile) &&
-                !_wfHack.RefusesGuidance(projectileUid, targetCoords.Value))
-            {
-                wfMissile.Designated = _xform.ToMapCoordinates(targetCoords.Value);
-                _wfMissileFlight.CaptureDescriptorFromCoordinate(wfMissile, wfMissile.Designated.Value,
-                    Transform(projectileUid)); // added
-            }
-        }
-        // WOLFGATE END
-
         foreach (var projectileUid in args.FiredProjectiles)
         {
             if (!TryComp<TargetGuidedComponent>(projectileUid, out var guidedComp))
@@ -134,6 +121,25 @@ public sealed partial class FireControlSystem
 
         // WOLFGATE(LockOn): a missile fired under the ship's lock seeks that target.
         WfLockOnApply(uid, args);
+
+        // WOLFGATE(ShipMissiles) START: capture the descriptor after WfLockOnApply has set Designated,
+        // so locked missiles capture the locked target's position. Non-locked shots keep cursor capture.
+        foreach (var projectileUid in args.FiredProjectiles)
+        {
+            if (!TryComp<Content.Server._WF.ShipMissiles.WFMissileFlightComponent>(projectileUid, out var wfMissile))
+                continue;
+
+            if (wfMissile.Designated is null && !_wfHack.RefusesGuidance(projectileUid, targetCoords.Value))
+            {
+                wfMissile.Designated = _xform.ToMapCoordinates(targetCoords.Value);
+            }
+
+            if (wfMissile.Designated is { } designated && !_wfHack.RefusesGuidance(projectileUid, _xform.ToCoordinates(designated)))
+            {
+                _wfMissileFlight.CaptureDescriptorFromCoordinate(wfMissile, designated, Transform(projectileUid));
+            }
+        }
+        // WOLFGATE END
     }
 
     /// <summary>

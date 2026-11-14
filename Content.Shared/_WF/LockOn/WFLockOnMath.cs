@@ -8,8 +8,7 @@ public static class WFLockOnMath
     /// <summary>Longest flight time considered, in seconds; beyond it the target is outrunning the gun.</summary>
     public const float MaxFlightTime = 60f;
 
-    /// <summary>Relative speed within this fraction of the projectile's counts as equal, and the solve is linear.</summary>
-    private const float EqualSpeedFraction = 1e-3f;
+
 
     /// <summary>
     /// Solves the lead point for a projectile of <paramref name="speed"/> fired from <paramref name="muzzle"/>.
@@ -29,7 +28,7 @@ public static class WFLockOnMath
         var c = Vector2.Dot(offset, offset);
 
         float time;
-        if (MathF.Abs(a) <= EqualSpeedFraction * speed * speed)
+        if (MathF.Abs(a) <= float.Epsilon)
         {
             // The target closes at exactly the projectile's speed, so the intercept is linear in time.
             if (MathF.Abs(b) <= float.Epsilon)

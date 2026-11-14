@@ -303,8 +303,8 @@ public sealed partial class TargetSeekingSystem : EntitySystem
                 bestCost = cost;
                 bestTarget = actualTarget;
             }
-            else
             // WOLFGATE END
+            else
             if (closestDistance > distance)
             {
                 closestDistance = distance;

@@ -82,20 +82,22 @@ public sealed class WFLockOnMissileIndicatorSystem : EntitySystem
         lockOn.MissileQuality = b.Quality;
         lockOn.MissileInEnvelope = b.InEnvelope;
         lockOn.MissileRange = b.Range;
+        lockOn.MissileSpeed = b.M.MaxSpeed;
         lockOn.MissileHasSolution = true;
         Dirty(ship, lockOn);
     }
 
     private readonly record struct MissileCandidate(
         Vector2 Bearing, Vector2 Muzzle, float DivertCost, float DivertBudget,
-        float Quality, bool InEnvelope, bool HasSolution, float Range);
+        float Quality, bool InEnvelope, bool HasSolution, float Range,
+        WFMissileFlightComponent M);
 
     private static MissileCandidate Solve(Vector2 muzzle, Vector2 shipVel, Vector2 nose,
         Vector2 targetPos, Vector2 targetVel, WFMissileFlightComponent m)
     {
         var intercept = WFLockOnMath.Solve(muzzle, targetPos, targetVel, m.MaxSpeed);
         if (!intercept.Valid)
-            return new(Vector2.Zero, muzzle, 0f, m.DivertBudget, 0f, false, false, 0f);
+            return new(Vector2.Zero, muzzle, 0f, m.DivertBudget, 0f, false, false, 0f, m);
 
         var idealBearing = (intercept.Point - muzzle).Normalized();
         var goal = MissileGuidance.ClampBearing(nose, idealBearing, m.LaunchOffBoresight);
@@ -117,6 +119,6 @@ public sealed class WFLockOnMissileIndicatorSystem : EntitySystem
             : (divertCost <= 0.001f ? 1f : 0f);
 
         return new(idealBearing, muzzle, divertCost, m.DivertBudget, quality, inEnvelope, true,
-            (intercept.Point - muzzle).Length());
+            (intercept.Point - muzzle).Length(), m);
     }
 }

@@ -8,6 +8,9 @@ namespace Content.Server._WF.LockOn;
 
 public sealed partial class WFLockOnSystem
 {
+    /// <summary>Squared distance within which a free entity counts as being on the clicked tile.</summary>
+    private const float FreeEntityTileToleranceSq = 4f;
+
     /// <summary>
     /// Finds what a radar click landed on. A free entity on the clicked tile wins over the grid beneath it, so
     /// rocks and debris can be locked directly; otherwise the grid itself is the target, so a ship or asteroid
@@ -26,8 +29,10 @@ public sealed partial class WFLockOnSystem
         _lookup.GetEntitiesIntersecting(point.MapId, box, found,
             LookupFlags.Dynamic | LookupFlags.Static | LookupFlags.Sundries);
 
-        EntityUid? free = null;
-        var freeDistance = float.MaxValue;
+        EntityUid? freeOnTile = null;
+        var freeOnTileDistance = float.MaxValue;
+        EntityUid? freeNearby = null;
+        var freeNearbyDistance = float.MaxValue;
         EntityUid? onGrid = null;
         var onGridDistance = float.MaxValue;
 
@@ -50,10 +55,18 @@ public sealed partial class WFLockOnSystem
             var distance = Vector2.DistanceSquared(_transform.GetWorldPosition(xform), point.Position);
             if (xform.GridUid == null)
             {
-                if (distance < freeDistance)
+                if (distance < FreeEntityTileToleranceSq)
                 {
-                    free = uid;
-                    freeDistance = distance;
+                    if (distance < freeOnTileDistance)
+                    {
+                        freeOnTile = uid;
+                        freeOnTileDistance = distance;
+                    }
+                }
+                else if (distance < freeNearbyDistance)
+                {
+                    freeNearby = uid;
+                    freeNearbyDistance = distance;
                 }
             }
             else if (distance < onGridDistance)
@@ -63,11 +76,14 @@ public sealed partial class WFLockOnSystem
             }
         }
 
-        if (free is { } entity)
-            return entity;
+        if (freeOnTile is { } onTile)
+            return onTile;
 
         if (_map.TryFindGridAt(point, out var gridUid, out _) && gridUid != ship && !TerminatingOrDeleted(gridUid))
             return gridUid;
+
+        if (freeNearby is { } nearby)
+            return nearby;
 
         return onGrid;
     }

@@ -4,6 +4,7 @@ using Content.Server._Mono.Projectiles.TargetSeeking;
 using Content.Shared._WF.ShipMissiles;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Physics.Systems;
 
@@ -129,7 +130,28 @@ public sealed partial class WFMissileFlightSystem
         {
             if (targetXform.MapID != designated.MapId)
                 continue;
-            var distance = Vector2.Distance(_transform.GetWorldPosition(targetXform), designated.Position);
+
+            float distance;
+            if (targetXform.GridUid is { } gridUid &&
+                EntityManager.TryGetComponent<MapGridComponent>(gridUid, out var grid) &&
+                EntityManager.TryGetComponent<TransformComponent>(gridUid, out var gridXform))
+            {
+                // Measure to the closest point on the grid's hull bounds, so a click near a
+                // large hull's edge selects that hull over a nearer decoy at its marker origin.
+                var gridWorldPos = _transform.GetWorldPosition(gridXform);
+                var worldAABB = new Box2(
+                    gridWorldPos + grid.LocalAABB.BottomLeft,
+                    gridWorldPos + grid.LocalAABB.TopRight);
+                var closest = new Vector2(
+                    Math.Clamp(designated.Position.X, worldAABB.Left, worldAABB.Right),
+                    Math.Clamp(designated.Position.Y, worldAABB.Top, worldAABB.Bottom));
+                distance = Vector2.Distance(closest, designated.Position);
+            }
+            else
+            {
+                distance = Vector2.Distance(_transform.GetWorldPosition(targetXform), designated.Position);
+            }
+
             if (distance >= bestDistance)
                 continue;
             best = uid;

@@ -78,7 +78,7 @@ public sealed partial class WFMissileFlightSystem
             if (_wfHack.IsLockedOut(shooterGrid, target))
                 continue;
 
-            var cost = CostOf(flight, target, markerXform, distance);
+            var cost = CostOf(flight, markerUid, markerXform, distance);
             if (cost >= bestCost)
                 continue;
 

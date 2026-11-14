@@ -141,7 +141,15 @@ public sealed partial class FireControlSystem : EntitySystem
         _wfHack.WarnGunner(uid, args.Actor, args.Selected, args.Coordinates); // WOLFGATE(BoardingAction): tell the gunner why locked guns stay silent.
 
         // WOLFGATE(LockOn): hand the ship's lock to the weapons this command fires.
-        WfLockOnMarkFire(uid, args.Selected);
+        // Filter to controlled weapons using the same membership check as FireWeapons.
+        var controlledSelection = new List<NetEntity>();
+        foreach (var net in args.Selected)
+        {
+            var localWeapon = GetEntity(net);
+            if (Exists(localWeapon) && server.Controlled.Contains(localWeapon))
+                controlledSelection.Add(net);
+        }
+        WfLockOnMarkFire(uid, controlledSelection);
 
         // Fire the actual weapons
         FireWeapons((EntityUid)component.ConnectedServer, args.Selected, args.Coordinates, server);
