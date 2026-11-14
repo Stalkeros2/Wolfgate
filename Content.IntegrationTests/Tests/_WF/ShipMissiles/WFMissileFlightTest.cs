@@ -20,6 +20,7 @@ namespace Content.IntegrationTests.Tests._WF.ShipMissiles;
 [TestFixture]
 public sealed class WFMissileFlightTest
 {
+    /// <summary>The missiles this module flies.</summary>>
     private static readonly string[] Flown =
     {
         "MissileProjectile50mmHE",
@@ -28,7 +29,10 @@ public sealed class WFMissileFlightTest
         "ShipMissileASM250HEAT",
         "ShipMissileASM250HV",
     };
-
+    /// <summary>
+    /// The carriers must stay neutral: a carrier that still flies itself would fight the flight system, and one
+    /// without a seeker cone would stop flares working.
+    /// </summary>
     [Test]
     public async Task CarriersOnlySeek()
     {
@@ -64,7 +68,10 @@ public sealed class WFMissileFlightTest
 
         await pair.CleanReturnAsync();
     }
-
+    /// <summary>
+    /// Fired down +x with the hull 600 m out and 100 m off the line of fire, the missile must lock, turn onto it and
+    /// never exceed its speed cap.
+    /// </summary>
     [Test]
     public async Task LaunchesAndLeads()
     {
@@ -77,6 +84,7 @@ public sealed class WFMissileFlightTest
 
         await pair.Server.WaitAssertion(() =>
         {
+            // A hull carrying a seeker target, off the missile's line of fire but inside its cone.
             var painted = em.SpawnEntity(null, map.GridCoords);
             xform.AnchorEntity(painted);
             em.AddComponent<TargetSeekingTargetComponent>(painted);
@@ -111,7 +119,10 @@ public sealed class WFMissileFlightTest
 
         await pair.CleanReturnAsync();
     }
-
+    /// <summary>
+    /// Handed 45 degrees off its nose, the missile still locks during the launch transient and takes the bearing: the
+    /// ASM-50's own 7.5 degree scan arc would never see that hull.
+    /// </summary>
     [Test]
     public async Task SoftLaunchTakesTheBearing()
     {
@@ -124,13 +135,14 @@ public sealed class WFMissileFlightTest
 
         await pair.Server.WaitAssertion(() =>
         {
+            // The painted hull sits on the grid at its origin; the missile is 600 m out, 45 degrees off the bearing.
             var painted = em.SpawnEntity(null, map.GridCoords);
             xform.AnchorEntity(painted);
             em.AddComponent<TargetSeekingTargetComponent>(painted);
 
             missile = em.SpawnEntity("MissileProjectile50mmHE",
                 new EntityCoordinates(map.MapUid, new Vector2(-424f, -424f)));
-            xform.SetWorldRotation(missile, Angle.FromDegrees(90));
+            xform.SetWorldRotation(missile, Angle.FromDegrees(90)); // +x: a quarter turn in world angles
         });
 
         await pair.RunTicksSync(12);

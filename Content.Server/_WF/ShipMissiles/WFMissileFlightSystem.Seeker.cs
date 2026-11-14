@@ -32,6 +32,7 @@ public sealed partial class WFMissileFlightSystem
         var target = carrier.CurrentTarget;
         if (target is not { } targetUid || TerminatingOrDeleted(targetUid))
         {
+            // Nothing to be blind about, and nothing to remember.
             flight.Seeker = WFMissileSeekerState.Tracking;
             flight.NotchTimer = 0f;
             flight.MemoryTimer = 0f;
@@ -82,10 +83,12 @@ public sealed partial class WFMissileFlightSystem
             }
         }
 
+        // Notched: fly the last good track. The seeker is not seeing the target, so the track is not refreshed.
         flight.MemoryTimer += frameTime;
 
         if (!beaming)
         {
+            // The geometry opened again: the seeker picks the target back up rather than staying dead for the flight.
             flight.Seeker = WFMissileSeekerState.Tracking;
             flight.NotchTimer = 0f;
             flight.KnownPosition = targetPos;
@@ -98,6 +101,7 @@ public sealed partial class WFMissileFlightSystem
         if (flight.MemoryTimer > flight.MemoryTime)
         {
             flight.Seeker = WFMissileSeekerState.Lost;
+            // Upstream would reacquire the same hull on its next tick; a lost seeker stays lost.
             _targetSeeking.SetSeekerTarget((uid, carrier), null, xform);
             carrier.SeekingDisabled = true;
             return false;

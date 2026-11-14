@@ -233,6 +233,12 @@ Small fixes for hot spots found in live server profiles, kept as narrow hooks in
   - how often a ship's guns are aimed; a shot attempt lasts 0.2 s, so they keep firing between
   - each turn covers the whole period
   - each ship aims on its own tick of the period
+- [`Content.Server/_Mono/Projectiles/TargetSeeking/TargetSeekingSystem.cs`](../../_Mono/Projectiles/TargetSeeking/TargetSeekingSystem.cs)
+  - mines (zero scan arc) never acquire; hoist the per-seeker values out of the loop
+  - other maps and out-of-range consoles are rejected before the angle math
+  - hoisted above
+  - computed and range-tested above
+  - see above
 - [`Content.Server/_Mono/Radar/RadarBlipSystem.cs`](../../_Mono/Radar/RadarBlipSystem.cs)
   - removals go only to sessions that asked recently
   - send removals only to recent radar users, none during round cleanup
