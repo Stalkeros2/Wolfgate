@@ -4,6 +4,3 @@ wg-lockon-out-of-range = Target out of lock range
 wg-lockon-status = LOCK: { $target }
 wg-lockon-alert = { $ship } has a firing solution on this vessel.
 wg-lockon-alert-sender = Tactical
-wg-lockon-debug = T { $time }s  Vt { $target }  Vg { $muzzle }  S { $speed }  L { $lead }m
-wg-lockon-missile-out-of-envelope = MISSILE OUT OF ENVELOPE
-wg-lockon-missile-debug = cost { $cost }  budget { $budget }  qual { $qual }  range { $range }m
