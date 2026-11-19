@@ -4,6 +4,7 @@
 using Content.Server._Mono.Ships.Systems;
 using Content.Server.Administration.Logs;
 using Content.Server.Shuttles.Systems;
+using Content.Server._WG.LockOn;
 using Content.Shared._Mono.FireControl;
 using Content.Shared._Mono.Ships.Components;
 using Content.Shared.Database;
@@ -139,6 +140,9 @@ public sealed partial class FireControlSystem : EntitySystem
             return;
 
         _wgHack.WarnGunner(uid, args.Actor, args.Selected, args.Coordinates); // WOLFGATE(BoardingAction): tell the gunner why locked guns stay silent.
+
+        // WOLFGATE(LockOn): hand the ship's lock to the weapons this command fires.
+        WgLockOnMarkFire(uid, args.Selected);
 
         // Fire the actual weapons
         FireWeapons((EntityUid)component.ConnectedServer, args.Selected, args.Coordinates, server);

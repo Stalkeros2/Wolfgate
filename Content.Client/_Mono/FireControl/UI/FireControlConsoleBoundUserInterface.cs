@@ -29,6 +29,12 @@ public sealed partial class FireControlConsoleBoundUserInterface : BoundUserInte
         _window.OnServerRefresh += OnRefreshServer;
         _window.CombatMessage += SendMessage; // WOLFGATE(CombatConsole): send group and flare commands through the console UI.
 
+        _window.Radar.OnRadarCursorMove += (coords) =>
+        {
+            var netCoords = EntMan.GetNetCoordinates(coords);
+            SendCursorUpdateMessage(netCoords);
+        };
+
         _window.Radar.OnRadarClick += (coords) =>
         {
             var netCoords = EntMan.GetNetCoordinates(coords);

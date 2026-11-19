@@ -82,6 +82,11 @@ public partial class ShuttleNavControl : BaseShuttleControl // Mono
     /// </summary>
     public Action<EntityCoordinates>? OnRadarClick;
 
+    /// <summary>
+    /// Raised on throttled cursor moves over the radar, separate from clicks so they cannot trigger lock requests.
+    /// </summary>
+    public Action<EntityCoordinates>? OnRadarCursorMove;
+
     private List<Entity<MapGridComponent>> _grids = new();
 
     // Mono - set if we want this to detect not from itself

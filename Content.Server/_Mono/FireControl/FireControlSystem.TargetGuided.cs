@@ -13,6 +13,7 @@ public sealed partial class FireControlSystem
 {
     [Dependency] private TargetGuidedSystem _targetGuided = null!;
     [Dependency] private Content.Server._WG.BoardingAction.WGHackHarpoonSystem _wgHack = default!; // WOLFGATE(BoardingAction)
+    [Dependency] private Content.Server._WG.LockOn.WGLockOnSystem _wgLockOn = default!; // WOLFGATE(LockOn)
 
     /// <summary>
     /// List of active guided missiles that need cursor position updates
@@ -40,8 +41,19 @@ public sealed partial class FireControlSystem
     /// </summary>
     private void OnConsoleFireEvent(EntityUid uid, FireControlConsoleComponent component, FireControlConsoleFireEvent args)
     {
-        // Store the current mouse position for this console
-        _consoleMousePositions[uid] = GetCoordinates(args.Coordinates);
+        // WOLFGATE(LockOn) START: a missile fired under the ship's lock tracks that target, not the cursor.
+        var consoleGrid = Transform(uid).GridUid;
+        if (consoleGrid is { } grid &&
+            _wgLockOn.GetTarget(grid) is { } targetUid &&
+            TryComp<TransformComponent>(targetUid, out var targetXform))
+        {
+            _consoleMousePositions[uid] = targetXform.Coordinates;
+        }
+        else
+        {
+            _consoleMousePositions[uid] = GetCoordinates(args.Coordinates);
+        }
+        // WOLFGATE(LockOn) END
     }
 
     /// <summary>
@@ -58,6 +70,9 @@ public sealed partial class FireControlSystem
         {
             shooter = projectileComp.Shooter;
         }
+
+        // WOLFGATE(LockOn): a missile fired under the ship's lock seeks that target.
+        _wgLockOn.Apply(uid, args);
 
         // We need to get the target coordinates from the gun component
         var targetCoords = component.ShootCoordinates;
