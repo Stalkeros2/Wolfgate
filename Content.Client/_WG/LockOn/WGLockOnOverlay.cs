@@ -16,14 +16,18 @@ using Robust.Shared.Timing;
 namespace Content.Client._WG.LockOn;
 
 /// <summary>
-/// Draws the ship\'s lock bracket and target name over a radar plot.
+/// Draws the ship's lock bracket and target name over a radar plot.
 /// </summary>
 public sealed class WGLockOnOverlay : Control
 {
     private static readonly Color LockColor = Color.FromHex("#ff4a4a");
+    private static readonly Color LeadColor = Color.FromHex("#ffd24a");
 
     private const float BracketRadius = 16f;
     private const float BracketArm = 7f;
+    private const float DedupeRadius = 6f;
+    private const float CrossArm = 5f;
+    private const int MaxGuns = 16;
 
     private readonly EntityUid _console;
     private readonly ShuttleNavControl _radar;
@@ -80,29 +84,30 @@ public sealed class WGLockOnOverlay : Control
         var targetView = Vector2.Transform(aimPoint, worldToView);
         DrawBracket(handle, targetView);
 
+        // line ~89 — target name above the bracket
         var targetName = _entities.GetComponent<MetaDataComponent>(target).EntityName;
-        var textSize = _font.MeasureString(targetName);
-        handle.DrawText(_font, targetName, targetView + new Vector2(0f, -BracketRadius - textSize.Y / 2f), LockColor);
+        var lineHeight = _font.GetLineHeight(1);
+        handle.DrawString(_font, targetView + new Vector2(0f, -BracketRadius - lineHeight / 2f), targetName, LockColor);
 
         // Lead crosses for each selected gun.
         _guns.Clear();
-        var availableWeapons = Weapons();
+        var availableWeapons = _weapons();
         foreach (var net in availableWeapons)
         {
             if (!_entities.TryGetEntity(net, out var weapon))
                 continue;
-            if (!_entities.TryGetComponent(weapon, out GunComponent? gun) ||
-                !_entities.TryGetComponent(weapon, out ShipGunTypeComponent? type))
+            if (!_entities.TryGetComponent(weapon.Value, out GunComponent? gun) ||
+                !_entities.TryGetComponent(weapon.Value, out ShipGunTypeComponent? type))
             {
                 _wgGunsUnresolved = true;
                 continue;
             }
             if (type.Type == ShipGunType.Missile)
                 continue;
-            var speed = _entities.HasComponent<HitscanBatteryAmmoProviderComponent>(weapon)
+            var speed = _entities.HasComponent<HitscanBatteryAmmoProviderComponent>(weapon.Value)
                 ? 0f
                 : gun.ProjectileSpeedModified > 0f ? gun.ProjectileSpeedModified : gun.ProjectileSpeed;
-            _guns.Add((weapon, speed));
+            _guns.Add((weapon.Value, speed));
         }
 
         _selection.Clear();
@@ -127,7 +132,7 @@ public sealed class WGLockOnOverlay : Control
             DrawLeadCross(handle, leadView, LeadColor);
         }
 
-        if (_config.GetCVar(WGLockOnCVars.DebugLead.Name))
+        if (_config.GetCVar<bool>(WGLockOnCVars.DebugLead.Name))
         {
             foreach (var (weapon, speed) in _guns)
             {
@@ -136,7 +141,7 @@ public sealed class WGLockOnOverlay : Control
                 var lead = WGLockOnMath.Solve(muzzle, aimPoint, lockOn.AimVelocity, speed);
                 if (!lead.Valid) continue;
                 var debug = $"T {lead.Time:F2}s Vt {target} Vg {muzzle} S {speed:F0} L {(lead.Point - aimPoint).Length():F0}m";
-                handle.DrawText(_font, debug, targetView + new Vector2(0f, BracketRadius + 2f), LockColor);
+                handle.DrawString(_font, targetView + new Vector2(0f, BracketRadius + 2f), debug, LockColor);
             }
         }
     }
