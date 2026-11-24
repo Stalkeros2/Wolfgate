@@ -37,6 +37,7 @@ Design notes: `Docs/_WG/ShipMissiles/design.md`.
 
 ### Server
 
+- [`Content.Server/_WG/ShipMissiles/TargetDescriptorCapture.cs`](TargetDescriptorCapture.cs)
 - [`Content.Server/_WG/ShipMissiles/WGMissileFlightComponent.cs`](WGMissileFlightComponent.cs)
 - [`Content.Server/_WG/ShipMissiles/WGMissileFlightSystem.cs`](WGMissileFlightSystem.cs)
 - [`Content.Server/_WG/ShipMissiles/WGMissileFlightSystem.Launch.cs`](WGMissileFlightSystem.Launch.cs)

@@ -53,7 +53,7 @@ public sealed partial class FireControlSystem
         {
             _consoleMousePositions[uid] = GetCoordinates(args.Coordinates);
         }
-        // WOLFGATE(LockOn) END
+        // WOLFGATE END
     }
 
     /// <summary>

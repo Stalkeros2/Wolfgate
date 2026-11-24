@@ -55,18 +55,8 @@ public sealed partial class WGLockOnSystem
             targetXform.MapID == MapId.Nullspace)
             return;
 
-        // Coordinate-guidance fields use the current locked hull point from AimPoint when the server
-        // has refreshed it (AimTime > 0); otherwise fall back to the target's live map position.
-        // The target entity is always preserved for entity-based seeking (SetSeekerTarget).
         var targetMap = targetXform.MapPosition;
         var targetCoords = _transform.ToCoordinates(targetMap);
-        if (Transform(weapon).GridUid is { } ship &&
-            TryComp<WGLockOnComponent>(ship, out var lockOn) &&
-            lockOn.AimTime > 0f)
-        {
-            targetMap = new MapCoordinates(lockOn.AimPoint, targetXform.MapID);
-            targetCoords = _transform.ToCoordinates(targetMap);
-        }
 
         foreach (var projectile in args.FiredProjectiles)
         {
@@ -99,9 +89,6 @@ public sealed partial class WGLockOnSystem
 
         if (!TryComp<TransformComponent>(target, out var targetXform))
             return null;
-
-        if (lockOn.AimTime > 0f)
-            return _transform.ToCoordinates(new MapCoordinates(lockOn.AimPoint, targetXform.MapID));
 
         return _transform.ToCoordinates(targetXform.MapPosition);
     }

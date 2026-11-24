@@ -11,9 +11,9 @@ namespace Content.Client._Mono.FireControl.UI;
 
 public sealed partial class FireControlConsoleBoundUserInterface
 {
-    private WGLockOnOverlay? _wgLockOn;
     private IInputManager? _wgLockInput;
     private IUserInterfaceManager? _wgLockUi;
+    private WGLockOnOverlay? _wgLockOverlay;
 
     /// <summary>Adds the lock overlay to the gunnery radar and routes lock clicks to the server.</summary>
     private void WgLockOnOpen()
@@ -21,14 +21,14 @@ public sealed partial class FireControlConsoleBoundUserInterface
         if (_window == null)
             return;
 
-        _wgLockOn = new WGLockOnOverlay(Owner, _window.Radar, _window.WgLockOnWeapons);
-        _window.Radar.AddChild(_wgLockOn);
-        LayoutContainer.SetAnchorPreset(_wgLockOn, LayoutContainer.LayoutPreset.Wide);
         _window.Radar.OnRadarClick += WgLockOnClick;
         _wgLockUi = IoCManager.Resolve<IUserInterfaceManager>();
         _wgLockInput = IoCManager.Resolve<IInputManager>();
         _wgLockInput.FirstChanceOnKeyEvent += WgLockOnKeyEvent;
         _window.OnClose += WgLockOnClose;
+
+        _wgLockOverlay = new WGLockOnOverlay(Owner!, _window.Radar);
+        _window.Radar.AddChild(_wgLockOverlay);
     }
 
     /// <summary>Releases the input hook when the gunnery window closes.</summary>
@@ -38,10 +38,10 @@ public sealed partial class FireControlConsoleBoundUserInterface
             _wgLockInput.FirstChanceOnKeyEvent -= WgLockOnKeyEvent;
         _wgLockInput = null;
         _wgLockUi = null;
+        _wgLockOverlay?.Parent?.RemoveChild(_wgLockOverlay);
+        _wgLockOverlay = null;
         if (_window != null)
             _window.Radar.OnRadarClick -= WgLockOnClick;
-        _wgLockOn?.Orphan();
-        _wgLockOn = null;
     }
 
     /// <summary>Middle click always locks; with no weapon selected, left click locks on release instead of firing.</summary>
@@ -70,7 +70,7 @@ public sealed partial class FireControlConsoleBoundUserInterface
 
     private void WgLockOnClick(EntityCoordinates coordinates)
     {
-        if (_window == null || _window.Radar.WgLockOnMouseDown() || _window.WgLockOnHasSelection())
+        if (_window == null || _window.Radar.WgLockOnMouseDown())
             return;
 
         WgLockOnRequest(coordinates);

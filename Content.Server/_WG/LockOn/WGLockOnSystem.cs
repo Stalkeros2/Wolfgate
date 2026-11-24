@@ -1,4 +1,3 @@
-using System.Numerics;
 using Content.Server.Chat.Systems;
 using Content.Server.Power.EntitySystems;
 using Content.Server.Shuttles.Components;
@@ -11,6 +10,7 @@ using Content.Shared.Ghost;
 using Content.Shared.Interaction;
 using Content.Shared.Popups;
 using Content.Shared.Shuttles.Components;
+using System.Numerics;
 using Robust.Server.Audio;
 using Robust.Server.GameObjects;
 using Robust.Shared.Audio;
@@ -18,17 +18,15 @@ using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Maths;
-using Robust.Shared.Physics.Components;
-using Robust.Shared.Physics.Systems;
 using Robust.Shared.Player;
 using Robust.Shared.Timing;
 
 namespace Content.Server._WG.LockOn;
 
 /// <summary>
-/// One firing solution per ship. A helm or gunnery console asks for a lock under a radar click; the ship's
-/// <see cref="WGLockOnComponent"/> carries it to every console aboard, points missiles at it, and warns the
-/// ship that has been locked.
+/// One lock per ship, shared by the helm and every gunnery console aboard. A radar click resolves to a contact
+/// and the ship's <see cref="WGLockOnComponent"/> carries it to every console aboard, and warns the ship that
+/// has been locked.
 /// </summary>
 public sealed partial class WGLockOnSystem : EntitySystem
 {
@@ -44,13 +42,9 @@ public sealed partial class WGLockOnSystem : EntitySystem
     [Dependency] private ShipPaSystem _pa = default!;
     [Dependency] private ChatSystem _chat = default!;
     [Dependency] private AudioSystem _audio = default!;
-    [Dependency] private SharedPhysicsSystem _physics = default!;
 
     /// <summary>How often a held lock is revalidated for a deleted, moved or distant target.</summary>
     public static readonly TimeSpan CheckInterval = TimeSpan.FromSeconds(0.5);
-
-    /// <summary>How often the locked point's position and velocity are refreshed for the lead indicator.</summary>
-    public static readonly TimeSpan AimInterval = TimeSpan.FromSeconds(0.05);
 
     /// <summary>Half-width of the box used to find what sits under a click, matching one tile.</summary>
     private const float ClickRadius = 15f;
@@ -134,10 +128,6 @@ public sealed partial class WGLockOnSystem : EntitySystem
         lockOn.LockedBy = console;
         lockOn.Operator = actor.Valid ? actor : null;
         lockOn.LockedAt = _timing.CurTime;
-        if (target is { } lockedTarget)
-            SetAim(ship, lockOn, lockedTarget, point);
-        else
-            ClearAim(lockOn);
         Dirty(ship, lockOn);
         if (CanPopup(actor))
         {
@@ -159,49 +149,9 @@ public sealed partial class WGLockOnSystem : EntitySystem
         lockOn.Target = null;
         lockOn.LockedBy = null;
         lockOn.Operator = null;
-        ClearAim(lockOn);
         Dirty(ship, lockOn);
         if (CanPopup(operatorUid))
             _popup.PopupEntity(Loc.GetString("wg-lockon-released"), console, operatorUid!.Value);
-    }
-    /// <summary>Records the clicked hull point in the target's own frame and seeds the aim state every console reads.</summary>
-    private void SetAim(EntityUid ship, WGLockOnComponent lockOn, EntityUid target, MapCoordinates click)
-    {
-        lockOn.TargetLocalPoint = Vector2.Zero;
-        if (TryComp<TransformComponent>(target, out var xform))
-        {
-            var (_, _, matrix) = _transform.GetWorldPositionRotationMatrix(xform);
-            if (Matrix3x2.Invert(matrix, out var inverse))
-                lockOn.TargetLocalPoint = Vector2.Transform(click.Position, inverse);
-        }
-        lockOn.NextAim = _timing.CurTime + AimInterval;
-        RefreshAim(ship, lockOn, target);
-    }
-    /// <summary>Re-reads the aim point's world position and velocity, including the target's spin about its centre.</summary>
-    private void RefreshAim(EntityUid ship, WGLockOnComponent lockOn, EntityUid target)
-    {
-        if (!TryComp<TransformComponent>(target, out var xform))
-            return;
-        var (origin, _, matrix) = _transform.GetWorldPositionRotationMatrix(xform);
-        var point = Vector2.Transform(lockOn.TargetLocalPoint, matrix);
-        var body = CompOrNull<PhysicsComponent>(target);
-        var velocity = _physics.GetMapLinearVelocity(target, body, xform);
-        var angular = _physics.GetMapAngularVelocity(target, body, xform);
-        if (MathF.Abs(angular) > 1e-4f)
-            velocity += Vector2Helpers.Cross(angular, point - origin);
-        lockOn.AimPoint = point;
-        lockOn.AimVelocity = velocity;
-        lockOn.AimTime = (float)_timing.CurTime.TotalSeconds;
-        Dirty(ship, lockOn);
-    }
-    /// <summary>Forgets the aim point when the lock is released.</summary>
-    private static void ClearAim(WGLockOnComponent lockOn)
-    {
-        lockOn.AimPoint = default;
-        lockOn.AimVelocity = default;
-        lockOn.AimTime = 0f;
-        lockOn.TargetLocalPoint = default;
-        lockOn.NextAim = TimeSpan.Zero;
     }
     /// <summary>The grid a locked entity belongs to, so locking a wall locks its ship.</summary>
     public EntityUid? TargetGrid(EntityUid? target)
@@ -233,15 +183,6 @@ public sealed partial class WGLockOnSystem : EntitySystem
     }
     public override void Update(float frameTime)
     {
-        var expired = new List<EntityUid>();
-        var shots = EntityQueryEnumerator<WGLockOnShotComponent>();
-        while (shots.MoveNext(out var weapon, out var shot))
-        {
-            if (shot.Expires <= _timing.CurTime)
-                expired.Add(weapon);
-        }
-        foreach (var weapon in expired)
-            RemComp<WGLockOnShotComponent>(weapon);
         var locks = EntityQueryEnumerator<WGLockOnComponent>();
         while (locks.MoveNext(out var ship, out var lockOn))
         {
@@ -252,11 +193,6 @@ public sealed partial class WGLockOnSystem : EntitySystem
                         EntityManager.EntityExists(locked) &&
                         TryComp<TransformComponent>(locked, out targetXform) &&
                         targetXform.MapID == Transform(ship).MapID;
-            if (valid && lockOn.NextAim <= _timing.CurTime)
-            {
-                lockOn.NextAim = _timing.CurTime + AimInterval;
-                RefreshAim(ship, lockOn, target!.Value);
-            }
             if (lockOn.NextCheck > _timing.CurTime)
                 continue;
             lockOn.NextCheck = _timing.CurTime + CheckInterval;
@@ -266,7 +202,6 @@ public sealed partial class WGLockOnSystem : EntitySystem
                 lockOn.Target = null;
                 lockOn.LockedBy = null;
                 lockOn.Operator = null;
-                ClearAim(lockOn);
                 Dirty(ship, lockOn);
             }
         }

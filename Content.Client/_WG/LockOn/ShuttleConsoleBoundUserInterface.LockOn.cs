@@ -1,6 +1,6 @@
 using System.Numerics;
-using Content.Client._WG.LockOn;
 using Content.Client.Shuttles.UI;
+using Content.Client._WG.LockOn;
 using Content.Shared._WG.LockOn;
 using Robust.Client.Input;
 using Robust.Client.UserInterface;
@@ -12,10 +12,10 @@ namespace Content.Client.Shuttles.BUI;
 
 public sealed partial class ShuttleConsoleBoundUserInterface
 {
-    private WGLockOnOverlay? _wgLockOn;
-    private ShuttleNavControl? _wgLockRadar;
     private IInputManager? _wgLockInput;
     private IUserInterfaceManager? _wgLockUi;
+    private ShuttleNavControl? _wgLockRadar;
+    private WGLockOnOverlay? _wgLockOverlay;
 
     /// <summary>Adds the lock overlay to the helm radar and routes lock clicks to the server.</summary>
     private void WgLockOnOpen()
@@ -27,14 +27,14 @@ public sealed partial class ShuttleConsoleBoundUserInterface
         if (_wgLockRadar == null)
             return;
 
-        _wgLockOn = new WGLockOnOverlay(Owner, _wgLockRadar, static () => Array.Empty<NetEntity>());
-        _wgLockRadar.AddChild(_wgLockOn);
-        LayoutContainer.SetAnchorPreset(_wgLockOn, LayoutContainer.LayoutPreset.Wide);
         _wgLockRadar.OnRadarClick += WgLockOnClick;
         _wgLockUi = IoCManager.Resolve<IUserInterfaceManager>();
         _wgLockInput = IoCManager.Resolve<IInputManager>();
         _wgLockInput.FirstChanceOnKeyEvent += WgLockOnKeyEvent;
         _window.OnClose += WgLockOnClose;
+
+        _wgLockOverlay = new WGLockOnOverlay(Owner!, _wgLockRadar);
+        _wgLockRadar.AddChild(_wgLockOverlay);
     }
 
     /// <summary>Releases the input hook when the helm window closes.</summary>
@@ -45,8 +45,8 @@ public sealed partial class ShuttleConsoleBoundUserInterface
         _wgLockInput = null;
         _wgLockUi = null;
         _wgLockRadar?.OnRadarClick -= WgLockOnClick;
-        _wgLockOn?.Orphan();
-        _wgLockOn = null;
+        _wgLockOverlay?.Parent?.RemoveChild(_wgLockOverlay);
+        _wgLockOverlay = null;
         _wgLockRadar = null;
     }
 
