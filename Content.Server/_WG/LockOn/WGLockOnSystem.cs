@@ -83,24 +83,24 @@ public sealed partial class WGLockOnSystem : EntitySystem
     private void OnHelmRequest(EntityUid uid, ShuttleConsoleComponent console, WGLockOnRequestMessage args)
     {
         if (CanOperate(uid, ShuttleConsoleUiKey.Key, args.Actor))
-            RequestLock(uid, args.Actor, args.Coordinates);
+            RequestLock(uid, args.Actor, args.Coordinates, args.Radius);
     }
 
     private void OnGunneryRequest(EntityUid uid, FireControlConsoleComponent console, WGLockOnRequestMessage args)
     {
         if (CanOperate(uid, FireControlConsoleUiKey.Key, args.Actor))
-            RequestLock(uid, args.Actor, args.Coordinates);
+            RequestLock(uid, args.Actor, args.Coordinates, args.Radius);
     }
 
     /// <summary>Locks the target under a click, or clears the lock when the click found nothing.</summary>
-    public bool RequestLock(EntityUid console, EntityUid actor, NetCoordinates coordinates)
+    public bool RequestLock(EntityUid console, EntityUid actor, NetCoordinates coordinates, float radius = 0f)
     {
         if (TerminatingOrDeleted(console) || Transform(console).GridUid is not { } ship)
             return false;
         if (!TryGetMapCoordinates(coordinates, console, out var point))
             return false;
         var lockOn = EnsureComp<WGLockOnComponent>(ship);
-        var target = ResolveTarget(console, ship, point);
+        var target = ResolveTarget(console, ship, point, radius);
         if (target is { } found && !InRange(ship, found, lockOn))
         {
             if (CanPopup(actor))

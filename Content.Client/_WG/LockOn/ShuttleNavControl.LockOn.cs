@@ -12,6 +12,9 @@ public partial class ShuttleNavControl
     /// <summary>Whether the radar's primary button is held, so only the release of a click locks.</summary>
     public bool WgLockOnMouseDown() => _isMouseDown;
 
+    /// <summary>The lock lens at the radar's current scale, in metres: the circle the tags show inside.</summary>
+    public float WgLockOnPickRadius => WgLensRadius * UIScale / MathF.Max(MinimapScale, 0.0001f);
+
     /// <summary>The radar's current world-to-pixel transform and the map it plots, for the lock overlay.</summary>
     public bool WgLockOnTryGetWorldToView(out Matrix3x2 worldToView, out MapId map)
     {

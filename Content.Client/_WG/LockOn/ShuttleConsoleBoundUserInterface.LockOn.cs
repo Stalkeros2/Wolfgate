@@ -79,7 +79,7 @@ public sealed partial class ShuttleConsoleBoundUserInterface
         if (_wgLockRadar == null || _wgLockRadar.WgLockOnMouseDown())
             return;
 
-        SendMessage(new WGLockOnRequestMessage(EntMan.GetNetCoordinates(coordinates)));
+        WgLockOnRequest(coordinates);
     }
 
     private void WgLockOnSend(Vector2 relativePosition)
@@ -91,6 +91,15 @@ public sealed partial class ShuttleConsoleBoundUserInterface
         if (!coordinates.IsValid(EntMan))
             return;
 
-        SendMessage(new WGLockOnRequestMessage(EntMan.GetNetCoordinates(coordinates)));
+        WgLockOnRequest(coordinates);
+    }
+
+    /// <summary>Asks the server to lock the contact nearest the cursor inside the radar's lens.</summary>
+    private void WgLockOnRequest(EntityCoordinates coordinates)
+    {
+        if (_wgLockRadar == null)
+            return;
+
+        SendMessage(new WGLockOnRequestMessage(EntMan.GetNetCoordinates(coordinates), _wgLockRadar.WgLockOnPickRadius));
     }
 }

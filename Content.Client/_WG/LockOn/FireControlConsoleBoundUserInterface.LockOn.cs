@@ -73,7 +73,7 @@ public sealed partial class FireControlConsoleBoundUserInterface
         if (_window == null || _window.Radar.WgLockOnMouseDown() || _window.WgLockOnHasSelection())
             return;
 
-        SendMessage(new WGLockOnRequestMessage(EntMan.GetNetCoordinates(coordinates)));
+        WgLockOnRequest(coordinates);
     }
 
     private void WgLockOnSend(Vector2 relativePosition)
@@ -85,6 +85,15 @@ public sealed partial class FireControlConsoleBoundUserInterface
         if (!coordinates.IsValid(EntMan))
             return;
 
-        SendMessage(new WGLockOnRequestMessage(EntMan.GetNetCoordinates(coordinates)));
+        WgLockOnRequest(coordinates);
+    }
+
+    /// <summary>Asks the server to lock the contact nearest the cursor inside the radar's lens.</summary>
+    private void WgLockOnRequest(EntityCoordinates coordinates)
+    {
+        if (_window == null)
+            return;
+
+        SendMessage(new WGLockOnRequestMessage(EntMan.GetNetCoordinates(coordinates), _window.Radar.WgLockOnPickRadius));
     }
 }

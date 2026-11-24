@@ -8,8 +8,14 @@ namespace Content.Shared._WG.LockOn;
 /// nothing. Sent by the helm and gunnery consoles alike.
 /// </summary>
 [Serializable, NetSerializable]
-public sealed class WGLockOnRequestMessage(NetCoordinates coordinates) : BoundUserInterfaceMessage
+public sealed class WGLockOnRequestMessage(NetCoordinates coordinates, float radius = 0f) : BoundUserInterfaceMessage
 {
     /// <summary>The click, in the map the console's radar plotted.</summary>
     public NetCoordinates Coordinates = coordinates;
+
+    /// <summary>
+    /// Radius in metres of the radar's cursor lens, so the pick fills the circle the radar draws. Zero falls back to
+    /// the server's own click radius.
+    /// </summary>
+    public float Radius = radius;
 }
