@@ -5,9 +5,12 @@ using System.Numerics;
 using Content.Server._Mono.Projectiles.TargetSeeking;
 using Content.Server._WG.LockOn;
 using Content.Server._WG.ShipMissiles;
+using Content.Server._WG.ShipPa;
 using Content.Shared._WG.LockOn;
 using Content.Shared.Weapons.Ranged.Components;
 using Content.Shared.Weapons.Ranged.Events;
+using Robust.Shared.Audio.Systems;
+using Robust.Shared.ContentPack;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Maths;
@@ -85,6 +88,9 @@ public sealed class WGLockOnTest
             var other = AddContact(maps, xform, map.MapId, map.Tile.Tile, new Vector2(50f, 50f));
             var net = Net(em, xform, map.MapId, xform.GetWorldPosition(em.GetComponent<TransformComponent>(other)));
 
+            Assert.That(em.System<ShipPaSystem>().CountSpeakers(other).Online, Is.Zero,
+                "A contact with no speakers must warn through the chat-and-chime fallback, not the PA.");
+
             Assert.That(lockOn.RequestLock(console, console, net), Is.True);
             var alert = em.GetComponent<WGLockOnAlertComponent>(other);
             var first = alert.NextAlert;
@@ -94,6 +100,35 @@ public sealed class WGLockOnTest
             Assert.That(lockOn.RequestLock(console, console, net), Is.True);
             Assert.That(em.GetComponent<WGLockOnAlertComponent>(other).NextAlert, Is.EqualTo(first),
                 "A gunner re-locking the same ship must not re-announce inside the cooldown.");
+        });
+
+        await pair.CleanReturnAsync();
+    }
+
+    /// <summary>
+    /// The alert's chime must be a shipped asset the audio system can measure: the fallback plays it through
+    /// PlayGlobal, which throws for a sound it cannot read, and that throw escapes the lock request and kills a
+    /// server built without exception tolerance. A prefix move that leaves the old path behind fails here instead.
+    /// </summary>
+    [Test]
+    public async Task TheWarningSoundIsShipped()
+    {
+        await using var pair = await PoolManager.GetServerClient();
+        var server = pair.Server;
+        var em = server.EntMan;
+
+        await server.WaitAssertion(() =>
+        {
+            var path = WGLockOnSystem.WarningSound.Path;
+            Assert.That(server.ResolveDependency<IResourceManager>().ContentFileExists(path), Is.True,
+                $"The lock warning {path} must exist under Resources.");
+
+            var audio = em.System<SharedAudioSystem>();
+            var sound = audio.ResolveSound(WGLockOnSystem.WarningSound);
+            Assert.DoesNotThrow(() =>
+            {
+                audio.GetAudioLength(sound);
+            }, "PlayGlobal measures the sound before it plays, so the alert needs a readable asset.");
         });
 
         await pair.CleanReturnAsync();
